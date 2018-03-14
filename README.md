@@ -83,7 +83,7 @@ More on git flow [here](https://github.com/nvie/gitflow) or [here](https://www.a
     * ##### `category_long` : =, __ne, __in, __icontains
     * ##### `category_short` : =, __ne, __in, __icontains
 
-* #### `GET /api/<platform_name>/?filters` :
+* #### `GET /api/<platform>/?filters` :
 
     * ##### `id` : =, __ne, __in 
     * ##### `dt` : __lt, __gt, __lte, __gte, __icontains
