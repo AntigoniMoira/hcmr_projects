@@ -22,7 +22,7 @@ More on git flow [here](https://github.com/nvie/gitflow) or [here](https://www.a
 
 ### The following filters are available:
 
->The filters must be separated by &.
+>The filters must be separated by &
 
 1. equal : =
 2. not equal : __ne
@@ -83,7 +83,7 @@ More on git flow [here](https://github.com/nvie/gitflow) or [here](https://www.a
     * ##### `category_long` : =, __ne, __in, __icontains
     * ##### `category_short` : =, __ne, __in, __icontains
 
-* #### `GET /api/`<platform>`/?filters` :
+* #### `GET /api/<platform_name>/?filters` :
 
     * ##### `id` : =, __ne, __in 
     * ##### `dt` : __lt, __gt, __lte, __gte, __icontains
