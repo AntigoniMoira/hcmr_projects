@@ -19,10 +19,10 @@ class PlatformFilter(FilterSet):
         model = Platform
         fields = {
             #filters:'exact','ne', 'lt', 'gt', 'lte', 'gte', 'in', icontains
-            'id': ['exact', 'in','ne'],
-            'pid': ['exact', 'ne','in'],
+            'id': ['exact', 'ne', 'in'], #notin
+            'pid': ['exact', 'ne','in'], #notin
             'tspr': ['exact', 'ne'],
-            'type': ['exact', 'ne', 'in'],
+            'type': ['exact', 'ne', 'in'], #notin
             'inst': ['exact'], #einai kai kleidi gia institutions opote ftiaxnei drop down me ta institutions
             'inst__id': ['exact', 'in'],
             'dts': [ 'lt', 'gt', 'lte', 'gte', 'icontains'],
@@ -31,31 +31,18 @@ class PlatformFilter(FilterSet):
             'lon':  ['lt', 'gt', 'lte', 'gte'],
             'status': [],
             'params' : ['icontains'], 
-            'platform_code': ['exact', 'ne'],
+            'platform_code': [],
             'wmo': ['exact', 'ne', 'icontains'],
             'pi_name' : ['icontains'], 
-            #'author' : ['icontains'],
-            #'contact' : ['icontains'],
-            #'island': [],
-            #'pl_name' : [],
-            #'inst_ref' : [],
+            'author' : [],
+            'contact' : [],
+            'island': [],
+            'pl_name' : [],
+            'inst_ref' : [],
             'assembly_center' : ['exact', 'ne', 'in'],
-            #'site_code' : [],
-            #'source' : []
+            'site_code' : [],
+            'source' : []
 
-        }
-
-class DataFilter(FilterSet):
-    #Field.register_lookup(NotEqual)
-    #Field.register_lookup(NotIn)
-
-    class Meta:
-        model = None
-        fields = {
-            #filters:'exact','ne', 'lt', 'gt', 'lte', 'gte', 'in', icontains
-            'id': ['exact', 'in'],
-            #'pid': ['exact', 'ne','in'],
-            
         }
 
 class InstitutionFilter(FilterSet):
@@ -66,10 +53,10 @@ class InstitutionFilter(FilterSet):
         model = Institution
         fields = {
             #filters:'exact','ne', 'lt', 'gt', 'lte', 'gte', 'in', icontains
-            'id': ['exact', 'in'],
-            'name_native' : [],
-            'abrv' : [],
-            'country' : [],
+            'id': ['exact', 'ne', 'in'], #notin
+            'name_native' : ['exact', 'ne', 'icontains'],
+            'abrv' : ['exact', 'ne', 'in', 'icontains'], #notin
+            'country' : ['exact', 'ne', 'in', 'icontains'], #notin
             'cdf_name' : [] 
         }
 
@@ -81,13 +68,13 @@ class ParameterFilter(FilterSet):
         model = Parameter
         fields = {
             #filters:'exact','ne', 'lt', 'gt', 'lte', 'gte', 'in', icontains
-            'id': ['exact', 'in'],
-            'pname': [],
-            'unit': [], 
-            'long_name': [], 
-            'stand_name': [], 
+            'id': ['exact', 'ne', 'in'], #notin
+            'pname': ['exact', 'ne', 'in', 'icontains'], #notin
+            'unit': ['exact', 'ne', 'in', 'icontains'], #notin
+            'long_name': ['icontains'], 
+            'stand_name': ['exact', 'ne', 'in', 'icontains'], #notin 
             'fval_qc': [], 
             'fval': [], 
-            'category_long': [], 
-            'category_short': []
+            'category_long': ['exact', 'ne', 'in', 'icontains'], #notin
+            'category_short': ['exact', 'ne', 'in', 'icontains'], #notin
         }
