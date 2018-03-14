@@ -22,30 +22,76 @@ More on git flow [here](https://github.com/nvie/gitflow) or [here](https://www.a
 
 ### The following filters are available:
 
->1. equal : =
-2. not equal : ne
-3. one of a list of values : in
-4. greater than or equal : gte
-5. greather than : gt
-6. less than or equal : lte
-7. less than : lt
-8. ilike : icontains
+>The filters must be separated by &.
 
-* ### `GET /api/platforms/?filters` :
+1. equal : =
+2. not equal : __ne
+3. one of a list of values : __in
+4. greater than or equal : __gte
+5. greather than : __gt
+6. less than or equal : __lte
+7. less than : __lt
+8. ilike : __icontains
+9. ordering : ordering= e.g. `/api/platforms/?ordring=id` (ascending order) or  `/api/platforms/?ordring=-id` (descending order)
+    >By default all data are sorted by id in an ascending order.
+10. Row limiting : limit=
+    >By adding &limit=# to an entity, the result set is limited and returns only the requested number of resources. 
+11. Column Filtering: fields=
+    >By using the "fields" keyword, the fields / columns that construct the resources can be defined.
+    e.g `/api/platforms/?fields=id,inst,pi_name&limit=1` returns:
+    ```json
+	{
+            "id": 1,
+            "inst": 33,
+            "pi_name": " "
+        }
+	```
 
-    * #### `id` : =, __ne, __in (e.g. `/api/platforms/?id__in=12,13,14`)
-    * #### `pid` : =, __ne, __in
-    * #### `tspr` : =, __ne
-    * #### `type` : =, __ne, __in
-    * #### `inst__id` : =, __in (e.g. `/api/platforms/?inst__id__in=1,2,3`)
-    * #### `dts` : lt, gt, lte, gte, icontains
-    * #### `dte` : lt, gt, lte, gte, icontains
-    * #### `lat` : lt, gt, lte, gte
-    * #### `lon` : lt, gt, lte, gte
-    * #### `status` : =true, =false
-    * #### `params` : __icontains
-    * #### `platform_code` : =, __ne
-    * #### `wmo` : =, __ne, __icontains
-    * #### `pi_name` : __icontains
-    * #### `assembly_center` : =, __ne, __in
+### Available filters for each ULR
 
+* #### `GET /api/platforms/?filters` :
+
+    * ##### `id` : =, __ne, __in (e.g. `/api/platforms/?id__in=12,13,14`)
+    * ##### `pid` : =, __ne, __in
+    * ##### `tspr` : =, __ne
+    * ##### `type` : =, __ne, __in
+    * ##### `inst__id` : =, __in (e.g. `/api/platforms/?inst__id__in=1,2,3`)
+    * ##### `dts` : __lt, __gt, __lte, __gte, icontains
+    * ##### `dte` : __lt, __gt, __lte, __gte, icontains
+    * ##### `lat` : __lt, __gt, __lte, __gte
+    * ##### `lon` : __lt, __gt, __lte, __gte
+    * ##### `status` : =true, =false
+    * ##### `params` : __icontains
+    * ##### `wmo` : =, __ne, __icontains
+    * ##### `pi_name` : __icontains
+    * ##### `assembly_center` : =, __ne, __in
+
+* #### `GET /api/institutions/?filters` :
+
+    * ##### `id` : =, __ne, __in 
+    * ##### `name_native` : =, __ne, __icontains
+    * ##### `abrv` : =, __ne, __in, __icontains
+    * ##### `country` :=, __ne, __in, __icontains
+
+* #### `GET /api/parameters/?filters` :
+
+    * ##### `id` : =, __ne, __in 
+    * ##### `pname` : =, __ne, __in, __icontains
+    * ##### `unit` : =, __ne, __in, __icontains
+    * ##### `long_name` : __icontains
+    * ##### `stand_name` : =, __ne, __in, __icontains 
+    * ##### `category_long` : =, __ne, __in, __icontains
+    * ##### `category_short` : =, __ne, __in, __icontains
+
+* #### `GET /api/`<platform>`/?filters` :
+
+    * ##### `id` : =, __ne, __in 
+    * ##### `dt` : __lt, __gt, __lte, __gte, __icontains
+    * ##### `lat` : __lt, __gt, __lte, __gte
+    * ##### `lon` : __lt, __gt, __lte, __gte 
+    * ##### `posqc` : =, __ne, __in, __lt, __gt, __lte, __gte
+    * ##### `pres` : __lt, __gt, __lte, __gte
+    * ##### `presqc` : =, __ne, __in, __lt, __gt, __lte, __gte
+    * ##### `param__id` : =, __ne, __in
+    * ##### `val` : __lt, __gt, __lte, __gte
+    * ##### `valqc` : =, __ne, __in, __lt, __gt, __lte, __gte
