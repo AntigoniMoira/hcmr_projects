@@ -8,7 +8,7 @@ from django_filters.rest_framework import DjangoFilterBackend, FilterSet
 from rest_framework.response import Response
 from .serializers import PlatformSerializer, DataSerializer, InstitutionSerializer, ParameterSerializer
 from .models import Test, getModel, Platform, Institution, Parameter
-from .filters import PlatformFilter, DataFilter, InstitutionFilter, ParameterFilter
+from .filters import PlatformFilter, InstitutionFilter, ParameterFilter
 from .paginations import PlatformPagination
 from .lookups import NotEqual
 from django.db.models.fields import Field
@@ -77,18 +77,18 @@ class DataList(generics.ListAPIView):
     Field.register_lookup(NotEqual)
     filter_fields = {
             #available filters:'exact','ne', 'lt', 'gt', 'lte', 'gte', 'in', icontains
-            'id': ['exact', 'ne', 'in'],
+            'id': ['exact', 'ne', 'in'], #notin
             'pid': [],
             'dt': ['lt', 'gt', 'lte', 'gte', 'icontains'],
             'lat': ['lt', 'gt', 'lte', 'gte'],
             'lon': ['lt', 'gt', 'lte', 'gte'],
-            'posqc': ['exact', 'ne', 'in','lt', 'gt', 'lte', 'gte'],
+            'posqc': ['exact', 'ne', 'in','lt', 'gt', 'lte', 'gte'], #notin
             'pres': ['lt', 'gt', 'lte', 'gte'],
-            'presqc': ['exact', 'ne', 'in', 'lt', 'gt', 'lte', 'gte'],
+            'presqc': ['exact', 'ne', 'in', 'lt', 'gt', 'lte', 'gte'], #notin
             'param': ['exact'],
-            'param__id' : ['exact','ne', 'in'],
+            'param__id' : ['exact','ne', 'in'], #notin
             'val': ['lt', 'gt', 'lte', 'gte'],
-            'valqc': ['exact', 'ne', 'in', 'lt', 'gt', 'lte', 'gte']
+            'valqc': ['exact', 'ne', 'in', 'lt', 'gt', 'lte', 'gte'] #notin
         }
     #pagination_class = PlatformPagination
     ordering_fields = ['id']
