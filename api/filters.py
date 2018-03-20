@@ -5,7 +5,7 @@ from distutils.util import strtobool
 from .models import Platform, Institution, Parameter
 from django import forms
 #imports for custom lookups
-from .lookups import NotEqual
+from .lookups import NotEqual, NotIn
 from django.db.models.fields import Field
 
 BOOLEAN_CHOICES = (('false', 'False'), ('true', 'True'),)

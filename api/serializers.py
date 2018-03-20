@@ -17,7 +17,7 @@ class DataSerializer(QueryFieldsMixin, serializers.ModelSerializer):
 
     class Meta:
         model = None
-        fields = ('id', 'pid', 'dt', 'lat', 'lon', 'posqc', 'pres', 'presqc', 'param', 'val', 'valqc', 'dvalqc')
+        fields = ('id', 'dt', 'lat', 'lon', 'posqc', 'pres', 'presqc', 'param', 'val', 'valqc', 'dvalqc')
 
 class InstitutionSerializer(QueryFieldsMixin, serializers.ModelSerializer):
 
