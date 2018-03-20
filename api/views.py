@@ -12,6 +12,9 @@ from .filters import PlatformFilter, InstitutionFilter, ParameterFilter
 from .paginations import PlatformPagination
 from .lookups import NotEqual
 from django.db.models.fields import Field
+import json
+from datetime import datetime
+from decimal import Decimal
 
 def index(request):
     return HttpResponse('Hey')
@@ -32,7 +35,6 @@ class InstitutionList(generics.ListAPIView):
     serializer_class = InstitutionSerializer
     filter_backends = (DjangoFilterBackend, OrderingFilter,)
     filter_class = InstitutionFilter
-    #pagination_class = PlatformPagination
     ordering_fields = ['id']
 
 class ParameterList(generics.ListAPIView):
@@ -40,35 +42,23 @@ class ParameterList(generics.ListAPIView):
     serializer_class = ParameterSerializer
     filter_backends = (DjangoFilterBackend, OrderingFilter,)
     filter_class = ParameterFilter
-    #pagination_class = PlatformPagination
     ordering_fields = ['id']
 
-'''def platforms_data(request, platform):
-    t=getModel()
-    t._meta.db_table='data\".\"'+platform
-    data=t.objects.all().count()
-    return JsonResponse({
-             'data': data
-            })'''
-
-
-# tis a general model for all data tables
-#t = getModel()
-
+#GET: returns a json with data
+#POST: takes a json and update DB
 class DataList(generics.ListAPIView):
-
 
     def get_queryset(self):
         platform = self.kwargs['platform']
         t = getModel()
-        t._meta.db_table='data\".\"'+platform 
+        t._meta.db_table='data\".\"'+platform
         queryset=t.objects.all()
         return queryset
     
     def get_serializer_class(self):
         platform = self.kwargs['platform']
-        t= getModel()
-        t._meta.db_table='data\".\"'+platform 
+        t = getModel()
+        t._meta.db_table='data\".\"'+platform
         serializer_class = DataSerializer
         serializer_class.Meta.model=t
         return serializer_class
@@ -78,7 +68,6 @@ class DataList(generics.ListAPIView):
     filter_fields = {
             #available filters:'exact','ne', 'lt', 'gt', 'lte', 'gte', 'in', icontains
             'id': ['exact', 'ne', 'in'], #notin
-            'pid': [],
             'dt': ['lt', 'gt', 'lte', 'gte', 'icontains'],
             'lat': ['lt', 'gt', 'lte', 'gte'],
             'lon': ['lt', 'gt', 'lte', 'gte'],
@@ -90,5 +79,35 @@ class DataList(generics.ListAPIView):
             'val': ['lt', 'gt', 'lte', 'gte'],
             'valqc': ['exact', 'ne', 'in', 'lt', 'gt', 'lte', 'gte'] #notin
         }
-    #pagination_class = PlatformPagination
     ordering_fields = ['id']
+
+
+    #Create or update fields in data."<platform>" tables
+    def post (self, request, *args, **kwargs):
+        platform = self.kwargs['platform']
+        t = getModel()
+        t._meta.db_table='data\".\"'+platform
+        prejson = json.loads(request.body)
+        datalist = prejson['data']
+        for i in range(len(datalist)):
+            par=Parameter.objects.get(pname=datalist[i]['param'])
+            obj, created = t.objects.update_or_create(
+                                dt = datalist[i]['dt'],
+			                    lat = datalist[i]['lat'],
+			                    lon = datalist[i]['lon'],
+                                param = par,
+                                pres = datalist[i]['pres'],
+			                    defaults={
+                                        'dt' : datalist[i]['dt'],
+			                            'lat' : datalist[i]['lat'],
+			                            'lon' : datalist[i]['lon'],
+			                            'posqc' : datalist[i]['posqc'],
+			                            'pres' : datalist[i]['pres'],
+			                            'presqc' : datalist[i]['presqc'],
+			                            'param' : par,
+			                            'val' : datalist[i]['val'],
+			                            'valqc' : datalist[i]['valqc'],
+			                            'dvalqc' : datalist[i]['dvalqc']},
+                            )
+        return Response(created)
+         
