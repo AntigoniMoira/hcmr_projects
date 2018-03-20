@@ -103,7 +103,7 @@ More on git flow [here](https://github.com/nvie/gitflow) or [here](https://www.a
 It gets a json (example):
 
 ```json
-	{
+{
 	"meta": [
 		{
 			"fval_qc": "-128",
@@ -149,6 +149,6 @@ It gets a json (example):
 		}
     ]
 }
-	```
+```
 
 And returns:
