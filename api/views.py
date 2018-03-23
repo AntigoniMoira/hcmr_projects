@@ -15,6 +15,7 @@ from django.db.models.fields import Field
 import json
 from datetime import datetime
 from decimal import Decimal
+from django.db import transaction
 
 def index(request):
     return HttpResponse('Hey')
@@ -82,32 +83,46 @@ class DataList(generics.ListAPIView):
     ordering_fields = ['id']
 
 
-    #Create or update fields in data."<platform>" tables
+    #Create or update fields in data."<platform>" tables and create parameter in metadata."parameters" if not exists
     def post (self, request, *args, **kwargs):
         platform = self.kwargs['platform']
         t = getModel()
         t._meta.db_table='data\".\"'+platform
         prejson = json.loads(request.body)
+        metalist = prejson['meta']
+        with transaction.atomic():
+            for i in range(len(metalist)):
+                 obj, created = Parameter.objects.get_or_create(
+                                    pname = metalist[i]['pname'],
+                                    defaults={
+                                            'pname' : metalist[i]['pname'],
+                                            'unit' : metalist[i]['init'],
+                                            'stand_name' : metalist[i]['stand_name'],
+                                            'long_name' : metalist[i]['long_name'],
+                                            'fval' : metalist[i]['fval'],
+                                            'fval_qc' : metalist[i]['fval_qc'],},
+                                )
         datalist = prejson['data']
-        for i in range(len(datalist)):
-            par=Parameter.objects.get(pname=datalist[i]['param'])
-            obj, created = t.objects.update_or_create(
-                                dt = datalist[i]['dt'],
-			                    lat = datalist[i]['lat'],
-			                    lon = datalist[i]['lon'],
-                                param = par,
-                                pres = datalist[i]['pres'],
-			                    defaults={
-                                        'dt' : datalist[i]['dt'],
-			                            'lat' : datalist[i]['lat'],
-			                            'lon' : datalist[i]['lon'],
-			                            'posqc' : datalist[i]['posqc'],
-			                            'pres' : datalist[i]['pres'],
-			                            'presqc' : datalist[i]['presqc'],
-			                            'param' : par,
-			                            'val' : datalist[i]['val'],
-			                            'valqc' : datalist[i]['valqc'],
-			                            'dvalqc' : datalist[i]['dvalqc']},
-                            )
+        with transaction.atomic():
+            for i in range(len(datalist)):
+                par=Parameter.objects.get(pname=datalist[i]['param'])
+                obj, created = t.objects.update_or_create(
+                                    dt = datalist[i]['dt'],
+                                    lat = datalist[i]['lat'],
+                                    lon = datalist[i]['lon'],
+                                    param = par,
+                                    pres = datalist[i]['pres'],
+                                    defaults={
+                                            'dt' : datalist[i]['dt'],
+                                            'lat' : datalist[i]['lat'],
+                                            'lon' : datalist[i]['lon'],
+                                            'posqc' : datalist[i]['posqc'],
+                                            'pres' : datalist[i]['pres'],
+                                            'presqc' : datalist[i]['presqc'],
+                                            'param' : par,
+                                            'val' : datalist[i]['val'],
+                                            'valqc' : datalist[i]['valqc'],
+                                            'dvalqc' : datalist[i]['dvalqc']},
+                                )
         return Response(created)
          

@@ -11,18 +11,22 @@ class Institution(models.Model):
     cdf_name = models.CharField(max_length=100)
 
     class Meta:
-        managed = False #No database table creation or deletion operations will be performed for this model.
+        # No database table creation or deletion operations will be performed for this model.
+        managed = False
         ordering = ('id', )
         db_table = 'metadata\".\"institutions'
 
     def __str__(self):
         return self.name_native
 
+
 class Platform(models.Model):
-    pid = models.CharField(unique=True,max_length=100)
+    pid = models.CharField(unique=True, max_length=100)
     tspr = models.CharField(max_length=100)
     type = models.CharField(max_length=100)
-    inst = models.ForeignKey(Institution, default='1', db_column='inst', to_field='id') #many-to-one relationship
+    # many-to-one relationship
+    inst = models.ForeignKey(Institution, default='1',
+                             db_column='inst', to_field='id')
     dts = models.CharField(max_length=100)
     dte = models.CharField(max_length=100)
     lat = models.FloatField(blank=True, null=True)
@@ -42,7 +46,8 @@ class Platform(models.Model):
     source = models.CharField(max_length=100)
 
     class Meta:
-        managed = False #No database table creation or deletion operations will be performed for this model.
+        # No database table creation or deletion operations will be performed for this model.
+        managed = False
         ordering = ('id', )
         verbose_name_plural = 'platforms'
         db_table = 'metadata\".\"platforms'
@@ -50,23 +55,26 @@ class Platform(models.Model):
     def __str__(self):
         return self.pid
 
+
 class Parameter(models.Model):
     pname = models.CharField(max_length=100)
     unit = models.CharField(max_length=100)
     long_name = models.CharField(max_length=100)
     stand_name = models.CharField(max_length=100)
     fval_qc = models.ImageField()
-    fval =  models.FloatField(blank=True, null=True)
+    fval = models.FloatField(blank=True, null=True)
     category_long = models.CharField(max_length=100)
     category_short = models.CharField(max_length=100)
 
     class Meta:
-        managed = False #No database table creation or deletion operations will be performed for this model.
+        # No database table creation or deletion operations will be performed for this model.
+        managed = False
         ordering = ('id', )
         db_table = 'metadata\".\"parameters'
 
     def __str__(self):
         return self.pname
+
 
 def getModel():
     class MyClassMetaclass(models.base.ModelBase):
@@ -87,28 +95,38 @@ def getModel():
         #pres = models.FloatField(blank=True, null=True)
         pres = models.TextField()
         presqc = models.SmallIntegerField(blank=True, null=True, default='0')
-        param =models.ForeignKey(Parameter, db_column='param', to_field='id', null=False)
+        param = models.ForeignKey(
+            Parameter, db_index=True, db_column='param', to_field='id', null=False)
         val = models.FloatField(blank=True, null=True)
         valqc = models.SmallIntegerField(blank=True, null=True, default='0')
         dvalqc = models.SmallIntegerField(blank=True, null=True)
 
+        class Meta:
+            # No database table creation or deletion operations will be performed for this model.
+            managed = False
+            ordering = ('id', )
+
     return MyClass
 
+
 class Test(models.Model):
-    pid = models.ForeignKey(Platform, default='1757', db_column='pid', to_field='id', null=False)
+    pid = models.ForeignKey(Platform, default='1757',
+                            db_column='pid', to_field='id', null=False)
     dt = models.DateTimeField(blank=True, null=True)
     lat = models.FloatField(blank=True, null=True)
     lon = models.FloatField(blank=True, null=True)
     posqc = models.SmallIntegerField(blank=True, null=True, default='0')
     pres = models.FloatField(blank=True, null=True)
     presqc = models.SmallIntegerField(blank=True, null=True, default='0')
-    param =models.ForeignKey(Parameter, db_column='param', to_field='id', null=False)
+    param = models.ForeignKey(
+        Parameter, db_column='param', to_field='id', null=False)
     val = models.FloatField(blank=True, null=True)
     valqc = models.SmallIntegerField(blank=True, null=True, default='0')
     dvalqc = models.SmallIntegerField(blank=True, null=True)
 
     class Meta:
-        managed = False #No database table creation or deletion operations will be performed for this model.
+        # No database table creation or deletion operations will be performed for this model.
+        managed = False
         ordering = ('-dt',)
         verbose_name_plural = 'Test'
         db_table = 'data\".\"PR_PF_6900795'
