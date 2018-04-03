@@ -119,7 +119,7 @@ class Test(models.Model):
     pres = models.FloatField(blank=True, null=True)
     presqc = models.SmallIntegerField(blank=True, null=True, default='0')
     param = models.ForeignKey(
-        Parameter, db_column='param', to_field='id', null=False)
+        Parameter, db_column='param', to_field='id', null=False, on_delete=models.CASCADE,)
     val = models.FloatField(blank=True, null=True)
     valqc = models.SmallIntegerField(blank=True, null=True, default='0')
     dvalqc = models.SmallIntegerField(blank=True, null=True)
