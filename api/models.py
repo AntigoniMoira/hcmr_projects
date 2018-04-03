@@ -26,7 +26,7 @@ class Platform(models.Model):
     type = models.CharField(max_length=100)
     # many-to-one relationship
     inst = models.ForeignKey(Institution, default='1',
-                             db_column='inst', to_field='id')
+                             db_column='inst', to_field='id', on_delete=models.CASCADE)
     dts = models.CharField(max_length=100)
     dte = models.CharField(max_length=100)
     lat = models.FloatField(blank=True, null=True)
@@ -96,7 +96,7 @@ def getModel():
         pres = models.TextField()
         presqc = models.SmallIntegerField(blank=True, null=True, default='0')
         param = models.ForeignKey(
-            Parameter, db_index=True, db_column='param', to_field='id', null=False)
+            Parameter, db_index=True, db_column='param', to_field='id', null=False, on_delete=models.CASCADE,)
         val = models.FloatField(blank=True, null=True)
         valqc = models.SmallIntegerField(blank=True, null=True, default='0')
         dvalqc = models.SmallIntegerField(blank=True, null=True)
@@ -111,7 +111,7 @@ def getModel():
 
 class Test(models.Model):
     pid = models.ForeignKey(Platform, default='1757',
-                            db_column='pid', to_field='id', null=False)
+                            db_column='pid', to_field='id', null=False, on_delete=models.CASCADE,)
     dt = models.DateTimeField(blank=True, null=True)
     lat = models.FloatField(blank=True, null=True)
     lon = models.FloatField(blank=True, null=True)
