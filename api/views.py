@@ -6,7 +6,7 @@ from rest_framework import generics
 from rest_framework.filters import OrderingFilter
 from django_filters.rest_framework import DjangoFilterBackend, FilterSet
 from rest_framework.response import Response
-from .serializers import PlatformSerializer, DataSerializer, InstitutionSerializer, ParameterSerializer
+from .serializers import PlatformSerializer, DataSerializer, InstitutionSerializer, ParameterSerializer, UserCreateSerializer
 from .models import Test, getModel, Platform, Institution, Parameter
 from .filters import PlatformFilter, InstitutionFilter, ParameterFilter
 from .paginations import PlatformPagination
@@ -16,6 +16,7 @@ import json
 from datetime import datetime
 from decimal import Decimal
 from django.db import transaction, connection
+from django.contrib.auth import get_user_model
 
 def index(request):
     return HttpResponse('Hey')
@@ -172,3 +173,12 @@ def poseidon_platform_parameters_with_measurements_between(request):
     cursor.close()
     
     return JsonResponse({ "data" : results[0][0]})
+
+################################################################################################################
+#views for user authentication
+
+User = get_user_model()
+
+class UserCreateAPIView(generics.CreateAPIView):
+    serializer_class = UserCreateSerializer
+    queryset = User.objects.all()
