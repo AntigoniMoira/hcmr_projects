@@ -15,7 +15,7 @@ from django.db.models.fields import Field
 import json
 from datetime import datetime
 from decimal import Decimal
-from django.db import transaction
+from django.db import transaction, connection
 
 def index(request):
     return HttpResponse('Hey')
@@ -126,3 +126,49 @@ class DataList(generics.ListAPIView):
                                 )
         return Response(created)
          
+
+###############################################################################################
+#Views for excel service
+
+#returns platforms
+def poseidon_platforms_with_measurements_between(request):
+    start_date=request.GET.get('start_date', '')
+    end_date=request.GET.get('end_date', '')
+
+    # Get a cursor on the connection
+    cursor = connection.cursor()
+
+    # Now, callproc to the name of the procedure/function and pass a list of parameters inside
+    cursor.callproc("data.poseidon_platforms_with_measurements_between", [start_date, end_date])
+
+    # Fetch new a list of all the results
+    results = cursor.fetchall()
+    # Close the cursor
+    cursor.close()
+
+    data = []
+    for i in range(len(results)):
+        d ={}
+        d['platform'] = results[i][0]
+        data.append(d)
+
+    return JsonResponse({ "data" : data})
+
+#returns platform's parameters
+def poseidon_platform_parameters_with_measurements_between(request):
+    platform_name=request.GET.get('platform', '')
+    start_date=request.GET.get('start_date', '')
+    end_date=request.GET.get('end_date', '')
+
+    # Get a cursor on the connection
+    cursor = connection.cursor()
+
+    # Now, callproc to the name of the procedure/function and pass a list of parameters inside
+    cursor.callproc("data.poseidon_platform_parameters_with_measurements_between", [platform_name, start_date, end_date])
+
+    # Fetch new a list of all the results
+    results = cursor.fetchall()
+    # Close the cursor
+    cursor.close()
+    
+    return JsonResponse({ "data" : results[0][0]})
