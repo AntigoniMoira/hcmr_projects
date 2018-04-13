@@ -1,25 +1,45 @@
-from django.shortcuts import render
+import json
+
+from datetime import datetime
+from decimal import Decimal
+
+from django.shortcuts import render, redirect
 from django.http import HttpResponse, JsonResponse
 from django.db.models import Q
-#from rest_framework.decorators import api_view
-from rest_framework import generics
-from rest_framework.filters import OrderingFilter
-from django_filters.rest_framework import DjangoFilterBackend, FilterSet
-from rest_framework.response import Response
-from .serializers import PlatformSerializer, DataSerializer, InstitutionSerializer, ParameterSerializer, UserCreateSerializer
+from django.db import transaction, connection
+from django.db.models.fields import Field
+from django.contrib.auth import get_user_model, authenticate, login, logout
+from django.urls import reverse
+
+from .serializers import (
+    PlatformSerializer,
+    DataSerializer,
+    InstitutionSerializer,
+    ParameterSerializer,
+    UserCreateSerializer,
+    UserLoginSerializer,
+)
 from .models import Test, getModel, Platform, Institution, Parameter
 from .filters import PlatformFilter, InstitutionFilter, ParameterFilter
 from .paginations import PlatformPagination
 from .lookups import NotEqual
-from django.db.models.fields import Field
-import json
-from datetime import datetime
-from decimal import Decimal
-from django.db import transaction, connection
-from django.contrib.auth import get_user_model
+
+from rest_framework import generics
+from rest_framework.filters import OrderingFilter
+from rest_framework.response import Response
+from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST
+from rest_framework.views import APIView
+from django_filters.rest_framework import DjangoFilterBackend, FilterSet
+from rest_framework.permissions import (
+    AllowAny,
+)
+
 
 def index(request):
-    return HttpResponse('Hey')
+    if not request.user.is_authenticated:
+        return redirect('/api/login/')
+    else:
+        return render(request, 'api/index.html')
 
 def help(request):
     return render(request, 'api/help.html')
@@ -129,7 +149,7 @@ class DataList(generics.ListAPIView):
          
 
 ###############################################################################################
-#Views for excel service
+#Views for db_download service
 
 #returns platforms
 def poseidon_platforms_with_measurements_between(request):
@@ -180,5 +200,32 @@ def poseidon_platform_parameters_with_measurements_between(request):
 User = get_user_model()
 
 class UserCreateAPIView(generics.CreateAPIView):
+    #permission_classes = [AllowAny]
     serializer_class = UserCreateSerializer
     queryset = User.objects.all()
+
+class UserLoginAPIView(APIView):
+    permission_classes = [AllowAny]
+    serializer_class = UserLoginSerializer
+
+    def post(self, request, *args, **kwargs):
+        data = request.data
+        serializer = UserLoginSerializer(data=data)
+        if serializer.is_valid(raise_exception=True):
+            new_data = serializer.data
+            user = authenticate(request, username=new_data['username'], password=new_data['password'])
+            login(request, user)
+            new_data['password']=''
+            #return Response(new_data, status=HTTP_200_OK)
+            return JsonResponse({
+                'success': True,
+                'redirectUri': reverse('index')
+            })
+        return Response(serializer.errors, status=HTTP_400_BAD_REQUEST)
+    
+    def get(self, request, *args, **kwargs):
+        return render(request, 'api/login.html')
+
+def logout_user(request):
+    logout(request)
+    return redirect('/api/login/')

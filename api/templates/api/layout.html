@@ -3,14 +3,17 @@
 
 <head>
     <meta charset="utf-8">
-    {% load static %}
+    {% load staticfiles %}
+    <link rel="stylesheet" type="text/css" href="{% static 'api/css/bootstrap.min.css' %}">
+    <script type="text/javascript" src="{% static 'api/js/bootstrap.min.js' %}"></script>
+    <script src="{% static 'api/js/jquery-3.3.1.min.js' %}"></script>
     <link rel="stylesheet" href="{% static 'api/css/styles.css' %}">
-    
 </head>
 
 <body>
 		{% block content %}
-		{% endblock %}
+        {% endblock %}
+    <script  type="module" src="{% static 'api/js/app.js' %}"></script>
 </body>
 
 </html>
