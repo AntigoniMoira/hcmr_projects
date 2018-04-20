@@ -95,18 +95,11 @@ class UserLoginSerializer(serializers.ModelSerializer):
             'email',
             'password',
         ]
-        '''extra_kwargs = {"password":
-                            {
-                                "write_only": True
-                            }
-        }'''
 
     def validate(self, data):
         user_obj = None
         email = data.get("email", None)
         password = data["password"]
-        if not email:
-            raise serializers.ValidationError("An email is required to login.")
 
         user = User.objects.filter(email=email).distinct()
         user=user.exclude(email__isnull=True).exclude(email='')
@@ -118,6 +111,7 @@ class UserLoginSerializer(serializers.ModelSerializer):
         if user_obj:
             if not user_obj.check_password(password):
                 raise serializers.ValidationError("Incorect credentials please try again.")
+                
         data['username']=user_obj.username
         return data
 

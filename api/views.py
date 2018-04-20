@@ -4,7 +4,7 @@ from datetime import datetime
 from decimal import Decimal
 
 from django.shortcuts import render, redirect
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 from django.db.models import Q
 from django.db import transaction, connection
 from django.db.models.fields import Field
@@ -29,11 +29,13 @@ from rest_framework.filters import OrderingFilter
 from rest_framework.response import Response
 from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST
 from rest_framework.views import APIView
+#from django.contrib.admin.views.decorators import staff_member_required
 from django_filters.rest_framework import DjangoFilterBackend, FilterSet
 from rest_framework.permissions import (
     AllowAny,
 )
 
+from .custom_permissions import UserPermission
 
 def index(request):
     if not request.user.is_authenticated:
@@ -46,6 +48,8 @@ def help(request):
 
 class PlatformList(generics.ListAPIView):
     queryset = Platform.objects.all()
+    #Only staff users allowed
+    permission_classes = (UserPermission, )
     serializer_class = PlatformSerializer
     filter_backends = (DjangoFilterBackend, OrderingFilter,)
     filter_class = PlatformFilter
@@ -54,6 +58,8 @@ class PlatformList(generics.ListAPIView):
 
 class InstitutionList(generics.ListAPIView):
     queryset = Institution.objects.all()
+    #Only staff users allowed
+    permission_classes = (UserPermission, )
     serializer_class = InstitutionSerializer
     filter_backends = (DjangoFilterBackend, OrderingFilter,)
     filter_class = InstitutionFilter
@@ -61,6 +67,8 @@ class InstitutionList(generics.ListAPIView):
 
 class ParameterList(generics.ListAPIView):
     queryset = Parameter.objects.all()
+    #Only staff users allowed
+    permission_classes = (UserPermission, )
     serializer_class = ParameterSerializer
     filter_backends = (DjangoFilterBackend, OrderingFilter,)
     filter_class = ParameterFilter
@@ -69,6 +77,8 @@ class ParameterList(generics.ListAPIView):
 #GET: returns a json with data
 #POST: takes a json and update DB
 class DataList(generics.ListAPIView):
+    #Only staff users allowed
+    permission_classes = (UserPermission, )
 
     def get_queryset(self):
         platform = self.kwargs['platform']
@@ -211,19 +221,24 @@ class UserLoginAPIView(APIView):
     def post(self, request, *args, **kwargs):
         data = request.data
         serializer = UserLoginSerializer(data=data)
-        if serializer.is_valid(raise_exception=True):
+        if serializer.is_valid(raise_exception=False):
             new_data = serializer.data
             user = authenticate(request, username=new_data['username'], password=new_data['password'])
             login(request, user)
             new_data['password']=''
-            #return Response(new_data, status=HTTP_200_OK)
             return JsonResponse({
                 'success': True,
                 'redirectUri': reverse('index')
             })
-        return Response(serializer.errors, status=HTTP_400_BAD_REQUEST)
-    
+        else:
+            return JsonResponse({
+                'success': False,
+                'message': serializer.errors['non_field_errors'][0]
+            })
+
     def get(self, request, *args, **kwargs):
+        if request.user.is_authenticated:
+            return HttpResponseRedirect('../index')
         return render(request, 'api/login.html')
 
 def logout_user(request):
