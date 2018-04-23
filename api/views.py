@@ -1,31 +1,73 @@
-from django.shortcuts import render
-from django.http import HttpResponse, JsonResponse
+import json
+
+from datetime import datetime
+from decimal import Decimal
+
+#from django
+from django.shortcuts import render, redirect
+from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 from django.db.models import Q
-#from rest_framework.decorators import api_view
+from django.db import transaction, connection
+from django.db.models.fields import Field
+from django.contrib.auth import get_user_model, authenticate, login, logout
+from django.urls import reverse
+
+#from my files
+from .serializers import (
+    PlatformSerializer,
+    DataSerializer,
+    InstitutionSerializer,
+    ParameterSerializer,
+    UserCreateSerializer,
+    UserLoginSerializer,
+    DeepObservAllDataSerializer,
+    DeepObservDataSerializer,
+    FerryboxSerializer,
+)
+from .models import (
+    Ferrybox,
+    getModel,
+    Platform,
+    Institution,
+    Parameter,
+    DeepObservgetModel,
+)
+from .filters import (
+    PlatformFilter,
+    InstitutionFilter,
+    ParameterFilter,
+    FerryboxFilter,
+)
+
+from .paginations import PlatformPagination
+from .lookups import NotEqual
+from .custom_permissions import UserPermission
+
+#from rest_framework
 from rest_framework import generics
 from rest_framework.filters import OrderingFilter
 from django_filters.rest_framework import DjangoFilterBackend, FilterSet
 from rest_framework.response import Response
-from .serializers import PlatformSerializer, DataSerializer, InstitutionSerializer, ParameterSerializer, UserCreateSerializer, DeepObservAllDataSerializer, DeepObservDataSerializer, FerryboxSerializer
-from .models import Ferrybox, getModel, Platform, Institution, Parameter, DeepObservgetModel
-from .filters import PlatformFilter, InstitutionFilter, ParameterFilter, FerryboxFilter
-from .paginations import PlatformPagination
-from .lookups import NotEqual
-from django.db.models.fields import Field
-import json
-from datetime import datetime
-from decimal import Decimal
-from django.db import transaction, connection
-from django.contrib.auth import get_user_model
+from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST
+from rest_framework.views import APIView
+
+from rest_framework.permissions import (
+    AllowAny,
+)
 
 def index(request):
-    return HttpResponse('Hey')
+    if not request.user.is_authenticated:
+        return redirect('/api/login/')
+    else:
+        return render(request, 'api/index.html')
 
 def help(request):
     return render(request, 'api/help.html')
 
 class PlatformList(generics.ListAPIView):
     queryset = Platform.objects.all()
+    #Only staff users allowed
+    permission_classes = (UserPermission, )
     serializer_class = PlatformSerializer
     filter_backends = (DjangoFilterBackend, OrderingFilter,)
     filter_class = PlatformFilter
@@ -34,6 +76,8 @@ class PlatformList(generics.ListAPIView):
 
 class InstitutionList(generics.ListAPIView):
     queryset = Institution.objects.all()
+    #Only staff users allowed
+    permission_classes = (UserPermission, )
     serializer_class = InstitutionSerializer
     filter_backends = (DjangoFilterBackend, OrderingFilter,)
     filter_class = InstitutionFilter
@@ -41,6 +85,8 @@ class InstitutionList(generics.ListAPIView):
 
 class ParameterList(generics.ListAPIView):
     queryset = Parameter.objects.all()
+    #Only staff users allowed
+    permission_classes = (UserPermission, )
     serializer_class = ParameterSerializer
     filter_backends = (DjangoFilterBackend, OrderingFilter,)
     filter_class = ParameterFilter
@@ -49,6 +95,8 @@ class ParameterList(generics.ListAPIView):
 #GET: returns a json with data
 #POST: takes a json and update DB
 class DataList(generics.ListAPIView):
+    #Only staff users allowed
+    permission_classes = (UserPermission, )
 
     def get_queryset(self):
         platform = self.kwargs['platform']
@@ -256,7 +304,7 @@ class FerryboxDataList(generics.ListAPIView):
     ordering_fields = ['id']
 
 ###############################################################################################
-#Views for excel service
+#Views for db_download service
 
 #returns platforms
 def poseidon_platforms_with_measurements_between(request):
@@ -307,5 +355,37 @@ def poseidon_platform_parameters_with_measurements_between(request):
 User = get_user_model()
 
 class UserCreateAPIView(generics.CreateAPIView):
+    #permission_classes = [AllowAny]
     serializer_class = UserCreateSerializer
     queryset = User.objects.all()
+
+class UserLoginAPIView(APIView):
+    permission_classes = [AllowAny]
+    serializer_class = UserLoginSerializer
+
+    def post(self, request, *args, **kwargs):
+        data = request.data
+        serializer = UserLoginSerializer(data=data)
+        if serializer.is_valid(raise_exception=False):
+            new_data = serializer.data
+            user = authenticate(request, username=new_data['username'], password=new_data['password'])
+            login(request, user)
+            new_data['password']=''
+            return JsonResponse({
+                'success': True,
+                'redirectUri': reverse('index')
+            })
+        else:
+            return JsonResponse({
+                'success': False,
+                'message': serializer.errors['non_field_errors'][0]
+            })
+
+    def get(self, request, *args, **kwargs):
+        if request.user.is_authenticated:
+            return HttpResponseRedirect('../index')
+        return render(request, 'api/login.html')
+
+def logout_user(request):
+    logout(request)
+    return redirect('/api/login/')

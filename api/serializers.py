@@ -3,6 +3,7 @@ from .models import Platform, Institution, Parameter, Ferrybox
 #helps to select fields
 from drf_queryfields import QueryFieldsMixin
 from django.contrib.auth import get_user_model
+from django.db.models import Q
 
 #converts to JSON
 #validations for data passed
@@ -60,6 +61,7 @@ class ParameterSerializer(QueryFieldsMixin, serializers.ModelSerializer):
 User = get_user_model()
 
 class UserCreateSerializer(serializers.ModelSerializer):
+    email = serializers.EmailField(label='Email Address')
     email2 = serializers.EmailField(label='Confirm Email')
     class Meta:
         model = User
@@ -73,8 +75,20 @@ class UserCreateSerializer(serializers.ModelSerializer):
                             {
                                 "write_only": True
                             }
-
         }
+
+    def validate_email(self, value):
+        data = self.get_initial()
+        email1 = data.get("email2")
+        email2 = value
+        if email1 != email2:
+            raise serializers.ValidationError("Emails must match!")
+        
+        user_qs = User.objects.filter(email=email2)
+        if user_qs.exists():
+            raise serializers.ValidationError("This user has already registered.")
+
+        return value
 
     def validate_email2(self, value):
         data = self.get_initial()
@@ -95,3 +109,34 @@ class UserCreateSerializer(serializers.ModelSerializer):
         user_obj.set_password(password)
         user_obj.save()
         return validated_data
+
+class UserLoginSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(allow_blank=True, read_only=True)
+    email = serializers.EmailField(label='Email Address', required=False, allow_blank=True)
+    class Meta:
+        model = User
+        fields = [
+            'username',
+            'email',
+            'password',
+        ]
+
+    def validate(self, data):
+        user_obj = None
+        email = data.get("email", None)
+        password = data["password"]
+
+        user = User.objects.filter(email=email).distinct()
+        user=user.exclude(email__isnull=True).exclude(email='')
+        if user.exists() and user.count() == 1:
+            user_obj = user.first()
+        else:
+            raise serializers.ValidationError("This email is not valid.")
+
+        if user_obj:
+            if not user_obj.check_password(password):
+                raise serializers.ValidationError("Incorect credentials please try again.")
+                
+        data['username']=user_obj.username
+        return data
+
