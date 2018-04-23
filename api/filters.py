@@ -2,7 +2,7 @@ from rest_framework.filters import OrderingFilter
 from django_filters.rest_framework import DjangoFilterBackend, FilterSet
 from django_filters import rest_framework as filters
 from distutils.util import strtobool
-from .models import Platform, Institution, Parameter
+from .models import Platform, Institution, Parameter, Ferrybox
 from django import forms
 #imports for custom lookups
 from .lookups import NotEqual, NotIn
@@ -77,4 +77,26 @@ class ParameterFilter(FilterSet):
             'fval': [], 
             'category_long': ['exact', 'ne', 'in', 'icontains'], #notin
             'category_short': ['exact', 'ne', 'in', 'icontains'], #notin
+        }
+
+class FerryboxFilter(FilterSet):
+    Field.register_lookup(NotEqual)
+    #Field.register_lookup(NotIn)
+
+    class Meta:
+        model = Ferrybox
+        fields = {
+            #filters:'exact','ne', 'lt', 'gt', 'lte', 'gte', 'in', icontains
+            'id': ['exact', 'ne', 'in'], #notin
+            'dt': ['lt', 'gt', 'lte', 'gte', 'icontains'],
+            'lat': ['lt', 'gt', 'lte', 'gte'],
+            'lon': ['lt', 'gt', 'lte', 'gte'],
+            'posqc': ['exact', 'ne', 'in','lt', 'gt', 'lte', 'gte'], #notin
+            'pres': ['lt', 'gt', 'lte', 'gte'],
+            'presqc': ['exact', 'ne', 'in', 'lt', 'gt', 'lte', 'gte'], #notin
+            'param': ['exact'],
+            'param__id' : ['exact','ne', 'in'], #notin
+            'val': ['lt', 'gt', 'lte', 'gte'],
+            'valqc': ['exact', 'ne', 'in', 'lt', 'gt', 'lte', 'gte'], #notin
+            'route_id': ['exact'],
         }

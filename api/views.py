@@ -3,6 +3,7 @@ import json
 from datetime import datetime
 from decimal import Decimal
 
+#from django
 from django.shortcuts import render, redirect
 from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 from django.db.models import Q
@@ -11,6 +12,7 @@ from django.db.models.fields import Field
 from django.contrib.auth import get_user_model, authenticate, login, logout
 from django.urls import reverse
 
+#from my files
 from .serializers import (
     PlatformSerializer,
     DataSerializer,
@@ -18,24 +20,40 @@ from .serializers import (
     ParameterSerializer,
     UserCreateSerializer,
     UserLoginSerializer,
+    DeepObservAllDataSerializer,
+    DeepObservDataSerializer,
+    FerryboxSerializer,
 )
-from .models import Test, getModel, Platform, Institution, Parameter
-from .filters import PlatformFilter, InstitutionFilter, ParameterFilter
+from .models import (
+    Ferrybox,
+    getModel,
+    Platform,
+    Institution,
+    Parameter,
+    DeepObservgetModel,
+)
+from .filters import (
+    PlatformFilter,
+    InstitutionFilter,
+    ParameterFilter,
+    FerryboxFilter,
+)
+
 from .paginations import PlatformPagination
 from .lookups import NotEqual
+from .custom_permissions import UserPermission
 
+#from rest_framework
 from rest_framework import generics
 from rest_framework.filters import OrderingFilter
+from django_filters.rest_framework import DjangoFilterBackend, FilterSet
 from rest_framework.response import Response
 from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST
 from rest_framework.views import APIView
-#from django.contrib.admin.views.decorators import staff_member_required
-from django_filters.rest_framework import DjangoFilterBackend, FilterSet
+
 from rest_framework.permissions import (
     AllowAny,
 )
-
-from .custom_permissions import UserPermission
 
 def index(request):
     if not request.user.is_authenticated:
@@ -156,7 +174,134 @@ class DataList(generics.ListAPIView):
                                             'dvalqc' : datalist[i]['dvalqc']},
                                 )
         return Response(created)
+
+class DeepObservAllDataList(generics.ListAPIView):
+
+    def get_queryset(self):
+        platform = self.kwargs['platform']
+        t = DeepObservgetModel()
+        t._meta.db_table='data\".\"'+platform
+        queryset=t.objects.all()
+        return queryset
+    
+    def get_serializer_class(self):
+        platform = self.kwargs['platform']
+        t = DeepObservgetModel()
+        t._meta.db_table='data\".\"'+platform
+        serializer_class = DeepObservAllDataSerializer
+        serializer_class.Meta.model=t
+        return serializer_class
+
+    filter_backends = (DjangoFilterBackend, OrderingFilter,)
+    Field.register_lookup(NotEqual)
+    filter_fields = {
+            #available filters:'exact','ne', 'lt', 'gt', 'lte', 'gte', 'in', icontains
+            'id': ['exact', 'ne', 'in'], #notin
+            'dt': ['lt', 'gt', 'lte', 'gte', 'icontains'],
+            'lat': ['lt', 'gt', 'lte', 'gte'],
+            'lon': ['lt', 'gt', 'lte', 'gte'],
+            'posqc': ['exact', 'ne', 'in','lt', 'gt', 'lte', 'gte'], #notin
+            'pres': ['lt', 'gt', 'lte', 'gte'],
+            'presqc': ['exact', 'ne', 'in', 'lt', 'gt', 'lte', 'gte'], #notin
+            'param': ['exact'],
+            'param__id' : ['exact','ne', 'in'], #notin
+            'val': ['lt', 'gt', 'lte', 'gte'],
+            'valqc': ['exact', 'ne', 'in', 'lt', 'gt', 'lte', 'gte'], #notin
+            'rval': ['lt', 'gt', 'lte', 'gte'],
+            'rvalqc': ['exact', 'ne', 'in', 'lt', 'gt', 'lte', 'gte'] #notin
+        }
+    ordering_fields = ['id']
+
+
+    #Create or update fields in data."<platform>" tables and create parameter in metadata."parameters" if not exists
+    def post (self, request, *args, **kwargs):
+        platform = self.kwargs['platform']
+        t = DeepObservgetModel()
+        t._meta.db_table='data\".\"'+platform
+        prejson = json.loads(request.body)
+        metalist = prejson['meta']
+        with transaction.atomic():
+            for i in range(len(metalist)):
+                 obj, created = Parameter.objects.get_or_create(
+                                    pname = metalist[i]['pname'],
+                                    defaults={
+                                            'pname' : metalist[i]['pname'],
+                                            'unit' : metalist[i]['init'],
+                                            'stand_name' : metalist[i]['stand_name'],
+                                            'long_name' : metalist[i]['long_name'],
+                                            'fval' : metalist[i]['fval'],
+                                            'fval_qc' : metalist[i]['fval_qc'],},
+                                )
+        datalist = prejson['data']
+        with transaction.atomic():
+            for i in range(len(datalist)):
+                par=Parameter.objects.get(pname=datalist[i]['param'])
+                obj, created = t.objects.update_or_create(
+                                    dt = datalist[i]['dt'],
+                                    lat = datalist[i]['lat'],
+                                    lon = datalist[i]['lon'],
+                                    param = par,
+                                    pres = datalist[i]['pres'],
+                                    defaults={
+                                            'dt' : datalist[i]['dt'],
+                                            'lat' : datalist[i]['lat'],
+                                            'lon' : datalist[i]['lon'],
+                                            'posqc' : datalist[i]['posqc'],
+                                            'pres' : datalist[i]['pres'],
+                                            'presqc' : datalist[i]['presqc'],
+                                            'param' : par,
+                                            'val' : datalist[i]['val'],
+                                            'valqc' : datalist[i]['valqc'],
+                                            'dvalqc' : datalist[i]['dvalqc'],
+                                            'rval' : datalist[i]['rval'],
+                                            'rvalqc' : datalist[i]['rvalqc']},
+                                )
+        return Response(created)
          
+
+
+class DeepObservDataList(generics.ListAPIView):
+
+    def get_queryset(self):
+        platform = self.kwargs['platform']
+        t = DeepObservgetModel()
+        t._meta.db_table='data\".\"'+platform
+        queryset=t.objects.all()
+        return queryset
+    
+    def get_serializer_class(self):
+        platform = self.kwargs['platform']
+        t = DeepObservgetModel()
+        t._meta.db_table='data\".\"'+platform
+        serializer_class = DeepObservDataSerializer
+        serializer_class.Meta.model=t
+        return serializer_class
+
+    filter_backends = (DjangoFilterBackend, OrderingFilter,)
+    Field.register_lookup(NotEqual)
+    filter_fields = {
+            #available filters:'exact','ne', 'lt', 'gt', 'lte', 'gte', 'in', icontains
+            'id': ['exact', 'ne', 'in'], #notin
+            'dt': ['lt', 'gt', 'lte', 'gte', 'icontains'],
+            'lat': ['lt', 'gt', 'lte', 'gte'],
+            'lon': ['lt', 'gt', 'lte', 'gte'],
+            'posqc': ['exact', 'ne', 'in','lt', 'gt', 'lte', 'gte'], #notin
+            'pres': ['lt', 'gt', 'lte', 'gte'],
+            'presqc': ['exact', 'ne', 'in', 'lt', 'gt', 'lte', 'gte'], #notin
+            'param': ['exact'],
+            'param__id' : ['exact','ne', 'in'], #notin
+            'val': ['lt', 'gt', 'lte', 'gte'],
+            'valqc': ['exact', 'ne', 'in', 'lt', 'gt', 'lte', 'gte'] #notin
+        }
+    ordering_fields = ['id']
+
+
+class FerryboxDataList(generics.ListAPIView):
+    queryset = Ferrybox.objects.all()
+    serializer_class = FerryboxSerializer
+    filter_backends = (DjangoFilterBackend, OrderingFilter,)
+    filter_class = FerryboxFilter
+    ordering_fields = ['id']
 
 ###############################################################################################
 #Views for db_download service

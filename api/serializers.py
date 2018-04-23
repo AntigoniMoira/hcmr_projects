@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Platform, Institution, Parameter
+from .models import Platform, Institution, Parameter, Ferrybox
 #helps to select fields
 from drf_queryfields import QueryFieldsMixin
 from django.contrib.auth import get_user_model
@@ -20,6 +20,31 @@ class DataSerializer(QueryFieldsMixin, serializers.ModelSerializer):
     class Meta:
         model = None
         fields = ('id', 'dt', 'lat', 'lon', 'posqc', 'pres', 'presqc', 'param', 'val', 'valqc', 'dvalqc')
+
+class DeepObservAllDataSerializer(QueryFieldsMixin, serializers.ModelSerializer):
+
+    class Meta:
+        model = None
+        fields = ('id', 'dt', 'lat', 'lon', 'posqc', 'pres', 'presqc', 'param', 'val', 'valqc', 'dvalqc', 'rval', 'rvalqc')
+
+class DeepObservDataSerializer(QueryFieldsMixin, serializers.ModelSerializer):
+    class Meta:
+        model = None
+        fields = ('id', 'dt', 'lat', 'lon', 'posqc', 'pres', 'presqc', 'param', 'val', 'valqc', 'dvalqc', 'rval', 'rvalqc')      
+              
+    def to_representation(self, obj):
+        ret = super(DeepObservDataSerializer, self).to_representation(obj)
+        if ret['rvalqc'] != 9:
+            ret['val'] = ret['rval']
+        ret.pop('rval')
+        ret.pop('rvalqc')
+        return ret
+
+class FerryboxSerializer(QueryFieldsMixin, serializers.ModelSerializer):
+
+    class Meta:
+        model = Ferrybox
+        fields = ('id', 'dt', 'lat', 'lon', 'posqc', 'pres', 'presqc', 'param', 'val', 'valqc', 'dvalqc', 'route_id')
 
 class InstitutionSerializer(QueryFieldsMixin, serializers.ModelSerializer):
 
