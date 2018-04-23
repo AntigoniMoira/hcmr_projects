@@ -87,12 +87,9 @@ def getModel():
 
         #pid = models.ForeignKey(Platform, db_column='pid', to_field='id', null=False)
         dt = models.DateTimeField(blank=True, null=True)
-        #lat = models.FloatField(blank=True, null=True)
-        #lon = models.FloatField(blank=True, null=True)
         lat = models.TextField()
         lon = models.TextField()
         posqc = models.SmallIntegerField(blank=True, null=True, default='0')
-        #pres = models.FloatField(blank=True, null=True)
         pres = models.TextField()
         presqc = models.SmallIntegerField(blank=True, null=True, default='0')
         param = models.ForeignKey(
@@ -108,8 +105,39 @@ def getModel():
 
     return MyClass
 
+def DeepObservgetModel():
+    class DeepObservMyClassMetaclass(models.base.ModelBase):
+        def __new__(cls, name, bases, attrs):
+            #name += db_table
+            return models.base.ModelBase.__new__(cls, name, bases, attrs)
 
-class Test(models.Model):
+    class DeepObservMyClass(models.Model):
+        __metaclass__ = DeepObservMyClassMetaclass
+
+        #pid = models.ForeignKey(Platform, db_column='pid', to_field='id', null=False)
+        dt = models.DateTimeField(blank=True, null=True)
+        lat = models.TextField()
+        lon = models.TextField()
+        posqc = models.SmallIntegerField(blank=True, null=True, default='0')
+        pres = models.TextField()
+        presqc = models.SmallIntegerField(blank=True, null=True, default='0')
+        param = models.ForeignKey(
+            Parameter, db_index=True, db_column='param', to_field='id', null=False, on_delete=models.CASCADE,)
+        val = models.FloatField(blank=True, null=True)
+        valqc = models.SmallIntegerField(blank=True, null=True, default='0')
+        dvalqc = models.SmallIntegerField(blank=True, null=True)
+        rval = models.FloatField(blank=True, null=True)
+        rvalqc = models.SmallIntegerField(blank=True, null=True, default='0')
+
+        class Meta:
+            # No database table creation or deletion operations will be performed for this model.
+            managed = False
+            ordering = ('id', )
+
+    return DeepObservMyClass
+
+
+class Ferrybox(models.Model):
     pid = models.ForeignKey(Platform, default='1757',
                             db_column='pid', to_field='id', null=False, on_delete=models.CASCADE,)
     dt = models.DateTimeField(blank=True, null=True)
@@ -123,13 +151,14 @@ class Test(models.Model):
     val = models.FloatField(blank=True, null=True)
     valqc = models.SmallIntegerField(blank=True, null=True, default='0')
     dvalqc = models.SmallIntegerField(blank=True, null=True)
+    route_id = models.IntegerField(blank=True, null=True)
 
     class Meta:
         # No database table creation or deletion operations will be performed for this model.
         managed = False
-        ordering = ('-dt',)
-        verbose_name_plural = 'Test'
-        db_table = 'data\".\"PR_PF_6900795'
+        ordering = ('id',)
+        verbose_name_plural = 'Ferrybox'
+        db_table = 'data\".\"TS_FB_SAEG01'
 
     def __str__(self):
         return str(self.pid)
