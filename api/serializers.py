@@ -12,9 +12,8 @@ class PlatformSerializer(QueryFieldsMixin, serializers.ModelSerializer):
 
     class Meta:
         model = Platform
-        fields = ('id', 'pid', 'tspr', 'type', 'inst', 'dts', 'dte', 'lat', 'lon', 'status', 'params', 'platform_code', 'wmo',
-                    'pi_name', 'author', 'contact', 'island', 'pl_name', 'inst_ref', 'assembly_center', 'site_code', 'source')
-
+        fields = '__all__'
+       
 class DataSerializer(QueryFieldsMixin, serializers.ModelSerializer):
 
     class Meta:
@@ -44,19 +43,19 @@ class FerryboxSerializer(QueryFieldsMixin, serializers.ModelSerializer):
 
     class Meta:
         model = Ferrybox
-        fields = ('id', 'dt', 'lat', 'lon', 'posqc', 'pres', 'presqc', 'param', 'val', 'valqc', 'dvalqc', 'route_id')
+        fields = '__all__'
 
 class InstitutionSerializer(QueryFieldsMixin, serializers.ModelSerializer):
 
     class Meta:
         model = Institution
-        fields = ('id', 'name_native', 'abrv', 'country', 'cdf_name')
+        fields = '__all__'
 
 class ParameterSerializer(QueryFieldsMixin, serializers.ModelSerializer):
 
     class Meta:
         model = Parameter
-        fields = ('id', 'pname', 'unit', 'long_name', 'stand_name', 'fval_qc', 'fval', 'category_long', 'category_short')
+        fields = '__all__'
 
 User = get_user_model()
 
