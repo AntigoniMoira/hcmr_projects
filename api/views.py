@@ -9,7 +9,7 @@ from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 from django.db.models import Q
 from django.db import transaction, connection
 from django.db.models.fields import Field
-from django.contrib.auth import get_user_model, authenticate, login, logout
+from django.contrib.auth import get_user_model, authenticate, login, logout, get_user
 from django.urls import reverse
 
 #from my files
@@ -23,6 +23,7 @@ from .serializers import (
     DeepObservAllDataSerializer,
     DeepObservDataSerializer,
     FerryboxSerializer,
+    NoDvalqcDataSerializer,
 )
 from .models import (
     Ferrybox,
@@ -31,6 +32,7 @@ from .models import (
     Institution,
     Parameter,
     DeepObservgetModel,
+    getModel_no_dvalqc,
 )
 from .filters import (
     PlatformFilter,
@@ -50,10 +52,21 @@ from django_filters.rest_framework import DjangoFilterBackend, FilterSet
 from rest_framework.response import Response
 from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST
 from rest_framework.views import APIView
+from rest_framework.authtoken.models import Token
 
 from rest_framework.permissions import (
     AllowAny,
 )
+
+from oauth2_provider.views.generic import ProtectedResourceView
+
+from .utils import cURL_request
+#from django.contrib.auth.decorators import login_required
+
+
+class ApiEndpoint(ProtectedResourceView):
+    def get(self, request, *args, **kwargs):
+        return HttpResponse('Hello, OAuth2!')
 
 def index(request):
     if not request.user.is_authenticated:
@@ -63,6 +76,9 @@ def index(request):
 
 def help(request):
     return render(request, 'api/help.html')
+
+def poseidon_db(request):
+    return render(request, 'api/poseidon_db.html')
 
 class PlatformList(generics.ListAPIView):
     queryset = Platform.objects.all()
@@ -307,6 +323,7 @@ class FerryboxDataList(generics.ListAPIView):
 #Views for db_download service
 
 #returns platforms
+#@login_required()
 def poseidon_platforms_with_measurements_between(request):
     start_date=request.GET.get('start_date', '')
     end_date=request.GET.get('end_date', '')
@@ -331,6 +348,7 @@ def poseidon_platforms_with_measurements_between(request):
     return JsonResponse({ "data" : data})
 
 #returns platform's parameters
+#@login_required()
 def poseidon_platform_parameters_with_measurements_between(request):
     platform_name=request.GET.get('platform', '')
     start_date=request.GET.get('start_date', '')
@@ -370,11 +388,16 @@ class UserLoginAPIView(APIView):
             new_data = serializer.data
             user = authenticate(request, username=new_data['username'], password=new_data['password'])
             login(request, user)
+            #token = Token.objects.create(user=user)
+            curl_res = cURL_request(new_data['username'], new_data['password'])
+            access_token=json.loads(curl_res.text)['access_token']
             new_data['password']=''
-            return JsonResponse({
+            response = JsonResponse({
                 'success': True,
                 'redirectUri': reverse('index')
             })
+            response.set_cookie('access_token', access_token)
+            return response
         else:
             return JsonResponse({
                 'success': False,
@@ -387,5 +410,40 @@ class UserLoginAPIView(APIView):
         return render(request, 'api/login.html')
 
 def logout_user(request):
+    #request.user.auth_token.delete()
+    response = HttpResponseRedirect('/api/login/')
+    response.delete_cookie('access_token')
     logout(request)
-    return redirect('/api/login/')
+    return response
+
+
+class Poseidon_db_List(generics.ListAPIView):
+    #Only staff users allowed
+    #permission_classes = (UserPermission, )
+
+    def get_queryset(self):
+        platform = self.kwargs['platform']
+        t = getModel_no_dvalqc()
+        t._meta.db_table='public\".\"'+platform
+        queryset=t.objects.all()
+        return queryset
+    
+    def get_serializer_class(self):
+        platform = self.kwargs['platform']
+        t = getModel_no_dvalqc()
+        t._meta.db_table='public\".\"'+platform
+        serializer_class = NoDvalqcDataSerializer
+        serializer_class.Meta.model=t
+        return serializer_class
+
+    filter_backends = (DjangoFilterBackend,)
+    Field.register_lookup(NotEqual)
+    filter_fields = {
+            'dt': ['lt', 'gt', 'lte', 'gte', 'icontains'],
+            'pres': ['lt', 'gt', 'lte', 'gte', 'in'],
+            #'presqc': ['exact', 'ne', 'in', 'lt', 'gt', 'lte', 'gte'], #notin
+            #'param': ['exact'],
+            'param__id' : ['exact','ne', 'in'], #notin
+            #'val': ['lt', 'gt', 'lte', 'gte'],
+            #'valqc': ['exact', 'ne', 'in', 'lt', 'gt', 'lte', 'gte'] #notin
+        }

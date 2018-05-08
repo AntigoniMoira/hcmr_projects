@@ -139,3 +139,8 @@ class UserLoginSerializer(serializers.ModelSerializer):
         data['username']=user_obj.username
         return data
 
+class NoDvalqcDataSerializer(QueryFieldsMixin, serializers.ModelSerializer):
+
+    class Meta:
+        model = None
+        fields = ('id', 'dt', 'lat', 'lon', 'posqc', 'pres', 'presqc', 'param', 'val', 'valqc')
