@@ -162,3 +162,31 @@ class Ferrybox(models.Model):
 
     def __str__(self):
         return str(self.pid)
+
+def getModel_no_dvalqc():
+    class MyClassMetaclass(models.base.ModelBase):
+        def __new__(cls, name, bases, attrs):
+            #name += db_table
+            return models.base.ModelBase.__new__(cls, name, bases, attrs)
+
+    class MyClass(models.Model):
+        __metaclass__ = MyClassMetaclass
+
+        #pid = models.ForeignKey(Platform, db_column='pid', to_field='id', null=False)
+        dt = models.DateTimeField(blank=True, null=True)
+        lat = models.TextField()
+        lon = models.TextField()
+        posqc = models.SmallIntegerField(blank=True, null=True, default='0')
+        pres = models.TextField()
+        presqc = models.SmallIntegerField(blank=True, null=True, default='0')
+        param = models.ForeignKey(
+            Parameter, db_index=True, db_column='param', to_field='id', null=False, on_delete=models.CASCADE,)
+        val = models.FloatField(blank=True, null=True)
+        valqc = models.SmallIntegerField(blank=True, null=True, default='0')
+    
+        class Meta:
+            # No database table creation or deletion operations will be performed for this model.
+            managed = False
+            ordering = ('dt','pres', )
+
+    return MyClass
