@@ -102,7 +102,7 @@ class InstitutionList(generics.ListAPIView):
 class ParameterList(generics.ListAPIView):
     queryset = Parameter.objects.all()
     #Only staff users allowed
-    permission_classes = (UserPermission, )
+    #permission_classes = (UserPermission, )
     serializer_class = ParameterSerializer
     filter_backends = (DjangoFilterBackend, OrderingFilter,)
     filter_class = ParameterFilter
@@ -358,7 +358,7 @@ def poseidon_platform_parameters_with_measurements_between(request):
     cursor = connection.cursor()
 
     # Now, callproc to the name of the procedure/function and pass a list of parameters inside
-    cursor.callproc("data.poseidon_platform_parameters_with_measurements_between", [platform_name, start_date, end_date])
+    cursor.callproc("public.poseidon_platform_parameters_with_measurements_between", [platform_name, start_date, end_date])
 
     # Fetch new a list of all the results
     results = cursor.fetchall()
