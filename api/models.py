@@ -187,6 +187,41 @@ def getModel_no_dvalqc():
         class Meta:
             # No database table creation or deletion operations will be performed for this model.
             managed = False
-            ordering = ('dt','pres', )
+            ordering = ('dt','pres', 'param__id')
 
     return MyClass
+
+class Request(models.Model):
+    platform = models.TextField(null=False)
+    querystring = models.TextField(null=False)
+    
+    class Meta:
+        # No database table creation or deletion operations will be performed for this model.
+        managed = False
+        ordering = ('-id',)
+        verbose_name_plural = 'Request'
+        db_table = 'uman\".\"requests'
+
+class Product(models.Model):
+    file_path = models.TextField(null=False)
+    creation_date = models.DateTimeField(blank=True, null=True)
+    
+    class Meta:
+        # No database table creation or deletion operations will be performed for this model.
+        managed = False
+        ordering = ('-id',)
+        verbose_name_plural = 'Product'
+        db_table = 'uman\".\"products'
+
+class ProductRequest(models.Model):
+    product_id = models.ForeignKey(Product, default='1',
+                             db_column='product_id', to_field='id', on_delete=models.CASCADE)
+    request_id = models.ForeignKey(Request, default='1',
+                             db_column='request_id', to_field='id', on_delete=models.CASCADE)
+    
+    class Meta:
+        # No database table creation or deletion operations will be performed for this model.
+        managed = False
+        ordering = ('-product_id', '-request_id',)
+        verbose_name_plural = 'ProductRequest'
+        db_table = 'uman\".\"product_requests'

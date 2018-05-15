@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Platform, Institution, Parameter, Ferrybox
+from .models import Platform, Institution, Parameter, Ferrybox, Request, Product, ProductRequest
 # Register your models here.
 
 class PlatformAdmin(admin.ModelAdmin):
@@ -29,4 +29,25 @@ class FerryboxAdmin(admin.ModelAdmin):
     list_per_page=10
 
 admin.site.register(Ferrybox, FerryboxAdmin)
+
+class RequestAdmin(admin.ModelAdmin):
+    list_display = ['id', 'platform', 'querystring']
+    search_fields = ['id', 'platform', 'querystring']
+    list_per_page=10
+
+admin.site.register(Request, RequestAdmin)
+
+class ProductAdmin(admin.ModelAdmin):
+    list_display = ['id', 'file_path', 'creation_date']
+    search_fields = ['id', 'file_path', 'creation_date']
+    list_per_page=10
+
+admin.site.register(Product, ProductAdmin)
+
+class ProductRequestAdmin(admin.ModelAdmin):
+    list_display = ['id', 'product_id', 'request_id']
+    search_fields = ['id', 'product_id', 'request_id']
+    list_per_page=10
+
+admin.site.register(ProductRequest, ProductRequestAdmin)
 
