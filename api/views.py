@@ -11,6 +11,7 @@ from django.db import transaction, connection
 from django.db.models.fields import Field
 from django.contrib.auth import get_user_model, authenticate, login, logout, get_user
 from django.urls import reverse
+from django.views.decorators.csrf import csrf_protect,csrf_exempt
 
 #from my files
 from .serializers import (
@@ -24,6 +25,7 @@ from .serializers import (
     DeepObservDataSerializer,
     FerryboxSerializer,
     NoDvalqcDataSerializer,
+    ProductRequestsSerializer,
 )
 from .models import (
     Ferrybox,
@@ -33,6 +35,9 @@ from .models import (
     Parameter,
     DeepObservgetModel,
     getModel_no_dvalqc,
+    Request,
+    Product,
+    ProductRequest,
 )
 from .filters import (
     PlatformFilter,
@@ -133,7 +138,7 @@ class DataList(generics.ListAPIView):
     Field.register_lookup(NotEqual)
     filter_fields = {
             #available filters:'exact','ne', 'lt', 'gt', 'lte', 'gte', 'in', icontains
-            'id': ['exact', 'ne', 'in'], #notin
+            'id': ['exact', 'ne', 'in', 'lte'], #notin
             'dt': ['lt', 'gt', 'lte', 'gte', 'icontains'],
             'lat': ['lt', 'gt', 'lte', 'gte'],
             'lon': ['lt', 'gt', 'lte', 'gte'],
@@ -447,3 +452,39 @@ class Poseidon_db_List(generics.ListAPIView):
             #'val': ['lt', 'gt', 'lte', 'gte'],
             #'valqc': ['exact', 'ne', 'in', 'lt', 'gt', 'lte', 'gte'] #notin
         }
+
+@csrf_exempt
+def poseidon_db_request (request):
+    if request.method == 'POST':
+        platform = request.POST.get('platform', None)
+        querystring = request.POST.get('querystring', None)
+        r=Request.objects.filter(Q(platform=platform), Q(querystring=querystring))
+        if r.exists():
+            return JsonResponse({ "success" : False, "id" : r[0].id})
+        else:
+             new_request=Request.objects.create(platform=platform, querystring=querystring)
+             new_request.save()
+             return JsonResponse({ "success" : True, "id" : new_request.id})
+    else:
+        result=Request.objects.first()
+        return JsonResponse({ "id" : result.id})
+
+@csrf_exempt
+def poseidon_db_product (request):
+    if request.method == 'POST':
+        file_path = request.POST.get('file_path', None)
+        creation_date = request.POST.get('creation_date', None)
+        p=Product.objects.filter(Q(file_path=file_path), Q(creation_date=creation_date))
+        if p.exists():
+            return JsonResponse({ "success" : False, "id" : p[0].id})
+        else:
+             new_product=Product.objects.create(file_path=file_path, creation_date=creation_date)
+             new_product.save()
+             return JsonResponse({ "success" : True, "id" : new_product.id})
+    else:
+        product=Product.objects.first()
+        return JsonResponse({ "id" : product.id})
+
+class ProductRequestsList(generics.ListAPIView):
+    queryset = ProductRequest.objects.all()
+    serializer_class = ProductRequestsSerializer

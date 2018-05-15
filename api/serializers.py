@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Platform, Institution, Parameter, Ferrybox
+from .models import Platform, Institution, Parameter, Ferrybox, ProductRequest
 #helps to select fields
 from drf_queryfields import QueryFieldsMixin
 from django.contrib.auth import get_user_model
@@ -144,3 +144,9 @@ class NoDvalqcDataSerializer(QueryFieldsMixin, serializers.ModelSerializer):
     class Meta:
         model = None
         fields = ('id', 'dt', 'lat', 'lon', 'posqc', 'pres', 'presqc', 'param', 'val', 'valqc')
+
+class ProductRequestsSerializer(QueryFieldsMixin, serializers.ModelSerializer):
+
+    class Meta:
+        model = ProductRequest
+        fields = '__all__'
