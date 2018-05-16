@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Platform, Institution, Parameter, Ferrybox, ProductRequest
+from .models import Platform, Institution, Parameter, Ferrybox, Cdf_Institution
 #helps to select fields
 from drf_queryfields import QueryFieldsMixin
 from django.contrib.auth import get_user_model
@@ -49,6 +49,12 @@ class InstitutionSerializer(QueryFieldsMixin, serializers.ModelSerializer):
 
     class Meta:
         model = Institution
+        fields = '__all__'
+
+class Cdf_InstitutionSerializer(QueryFieldsMixin, serializers.ModelSerializer):
+
+    class Meta:
+        model = Cdf_Institution
         fields = '__all__'
 
 class ParameterSerializer(QueryFieldsMixin, serializers.ModelSerializer):
@@ -144,9 +150,3 @@ class NoDvalqcDataSerializer(QueryFieldsMixin, serializers.ModelSerializer):
     class Meta:
         model = None
         fields = ('id', 'dt', 'lat', 'lon', 'posqc', 'pres', 'presqc', 'param', 'val', 'valqc')
-
-class ProductRequestsSerializer(QueryFieldsMixin, serializers.ModelSerializer):
-
-    class Meta:
-        model = ProductRequest
-        fields = '__all__'

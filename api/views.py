@@ -25,7 +25,7 @@ from .serializers import (
     DeepObservDataSerializer,
     FerryboxSerializer,
     NoDvalqcDataSerializer,
-    ProductRequestsSerializer,
+    Cdf_InstitutionSerializer,
 )
 from .models import (
     Ferrybox,
@@ -35,15 +35,14 @@ from .models import (
     Parameter,
     DeepObservgetModel,
     getModel_no_dvalqc,
-    Request,
-    Product,
-    ProductRequest,
+    Cdf_Institution,
 )
 from .filters import (
     PlatformFilter,
     InstitutionFilter,
     ParameterFilter,
     FerryboxFilter,
+    Cdf_InstitutionFilter,
 )
 
 from .paginations import PlatformPagination
@@ -88,21 +87,85 @@ def poseidon_db(request):
 class PlatformList(generics.ListAPIView):
     queryset = Platform.objects.all()
     #Only staff users allowed
-    permission_classes = (UserPermission, )
+    #permission_classes = (UserPermission, )
     serializer_class = PlatformSerializer
     filter_backends = (DjangoFilterBackend, OrderingFilter,)
     filter_class = PlatformFilter
     #pagination_class = PlatformPagination
     ordering_fields = ['id']
 
+    def post (self, request, *args, **kwargs):
+        body_unicode=request.body.decode('utf-8')
+        prejson = json.loads(body_unicode)
+        datalist = prejson['data']
+        try:
+            with transaction.atomic():
+                for i in range(len(datalist)):
+                    inst = Institution.objects.get(id=datalist[i]['inst'])
+                    obj, created = Platform.objects.update_or_create(
+                                        pid = datalist[i]['pid'],
+                                        tspr = datalist[i]['tspr'],
+                                        type = datalist[i]['type'],
+                                        defaults={
+                                                'pid' : datalist[i]['pid'],
+                                                'tspr' : datalist[i]['tspr'],
+                                                'type' : datalist[i]['type'],
+                                                'dts' : datalist[i]['dts'],
+                                                'dte' : datalist[i]['dte'],
+                                                'lat' : datalist[i]['lat'],
+                                                'lon' : datalist[i]['lon'],
+                                                'status' : datalist[i]['status'],
+                                                'params' : datalist[i]['params'],
+                                                'platform_code' : datalist[i]['platform_code'],
+                                                'wmo' : datalist[i]['wmo'],
+                                                'pi_name' : datalist[i]['pi_name'],
+                                                'author' : datalist[i]['author'],
+                                                'contact' : datalist[i]['contact'],
+                                                'island' : datalist[i]['island'],
+                                                'pl_name' : datalist[i]['pl_name'],
+                                                'inst_ref' : datalist[i]['inst_ref'],
+                                                'assembly_center' : datalist[i]['assembly_center'],
+                                                'site_code' : datalist[i]['site_code'],
+                                                'source' : datalist[i]['source'],
+                                                'cdf_inst' : datalist[i]['cdf_inst'],
+                                                'inst' : inst},
+                                    )
+        except Exception:
+            return JsonResponse({
+                'success': False
+                })
+        return JsonResponse({
+                'success': True
+                })
+
 class InstitutionList(generics.ListAPIView):
     queryset = Institution.objects.all()
     #Only staff users allowed
-    permission_classes = (UserPermission, )
+    #permission_classes = (UserPermission, )
     serializer_class = InstitutionSerializer
     filter_backends = (DjangoFilterBackend, OrderingFilter,)
     filter_class = InstitutionFilter
     ordering_fields = ['id']
+
+class Cdf_InstitutionList(generics.ListAPIView):
+    queryset = Cdf_Institution.objects.all()
+    serializer_class = Cdf_InstitutionSerializer
+    filter_backends = (DjangoFilterBackend, OrderingFilter,)
+    filter_class = Cdf_InstitutionFilter
+    ordering_fields = ['id']
+
+    def post (self, request, *args, **kwargs):
+        name=request.POST.get('name', None)
+        inst=Cdf_Institution.objects.filter(name=name)
+        if inst.exists():
+            return JsonResponse({ "success" : False})
+        else:
+            institution=Institution.objects.get(id=66)
+            new_cdf_inst=Cdf_Institution.objects.create(name=name, inst_id=institution)
+            new_cdf_inst.save()
+            return JsonResponse({ "success" : True, "id" : new_cdf_inst.id})
+
+
 
 class ParameterList(generics.ListAPIView):
     queryset = Parameter.objects.all()
@@ -113,11 +176,38 @@ class ParameterList(generics.ListAPIView):
     filter_class = ParameterFilter
     ordering_fields = ['id']
 
+    #Create or update fields in data."<platform>" tables and create parameter in metadata."parameters" if not exists
+    def post (self, request, *args, **kwargs):
+        #print(request.data)
+        body_unicode=request.body.decode('utf-8')
+        prejson = json.loads(body_unicode)
+        metalist = prejson['meta']
+        try:
+            with transaction.atomic():
+                for i in range(len(metalist)):
+                    obj, created = Parameter.objects.get_or_create(
+                                        pname = metalist[i]['pname'],
+                                        defaults={
+                                                'pname' : metalist[i]['pname'],
+                                                'unit' : metalist[i]['init'],
+                                                'stand_name' : metalist[i]['stand_name'],
+                                                'long_name' : metalist[i]['long_name'],
+                                                'fval' : metalist[i]['fval'],
+                                                'fval_qc' : metalist[i]['fval_qc'],},
+                                    )
+        except Exception:
+            return JsonResponse({
+                'success': False
+                })
+        return JsonResponse({
+                'success': True
+                })
+
 #GET: returns a json with data
 #POST: takes a json and update DB
 class DataList(generics.ListAPIView):
     #Only staff users allowed
-    permission_classes = (UserPermission, )
+    #permission_classes = (UserPermission, )
 
     def get_queryset(self):
         platform = self.kwargs['platform']
@@ -158,43 +248,38 @@ class DataList(generics.ListAPIView):
         platform = self.kwargs['platform']
         t = getModel()
         t._meta.db_table='data\".\"'+platform
-        prejson = json.loads(request.body)
-        metalist = prejson['meta']
-        with transaction.atomic():
-            for i in range(len(metalist)):
-                 obj, created = Parameter.objects.get_or_create(
-                                    pname = metalist[i]['pname'],
-                                    defaults={
-                                            'pname' : metalist[i]['pname'],
-                                            'unit' : metalist[i]['init'],
-                                            'stand_name' : metalist[i]['stand_name'],
-                                            'long_name' : metalist[i]['long_name'],
-                                            'fval' : metalist[i]['fval'],
-                                            'fval_qc' : metalist[i]['fval_qc'],},
-                                )
+        body_unicode=request.body.decode('utf-8')
+        prejson = json.loads(body_unicode)
         datalist = prejson['data']
-        with transaction.atomic():
-            for i in range(len(datalist)):
-                par=Parameter.objects.get(pname=datalist[i]['param'])
-                obj, created = t.objects.update_or_create(
-                                    dt = datalist[i]['dt'],
-                                    lat = datalist[i]['lat'],
-                                    lon = datalist[i]['lon'],
-                                    param = par,
-                                    pres = datalist[i]['pres'],
-                                    defaults={
-                                            'dt' : datalist[i]['dt'],
-                                            'lat' : datalist[i]['lat'],
-                                            'lon' : datalist[i]['lon'],
-                                            'posqc' : datalist[i]['posqc'],
-                                            'pres' : datalist[i]['pres'],
-                                            'presqc' : datalist[i]['presqc'],
-                                            'param' : par,
-                                            'val' : datalist[i]['val'],
-                                            'valqc' : datalist[i]['valqc'],
-                                            'dvalqc' : datalist[i]['dvalqc']},
-                                )
-        return Response(created)
+        try:
+            with transaction.atomic():
+                for i in range(len(datalist)):
+                    par=Parameter.objects.get(pname=datalist[i]['param'])
+                    obj, created = t.objects.update_or_create(
+                                        dt = datalist[i]['dt'],
+                                        lat = datalist[i]['lat'],
+                                        lon = datalist[i]['lon'],
+                                        param = par,
+                                        pres = datalist[i]['pres'],
+                                        defaults={
+                                                'dt' : datalist[i]['dt'],
+                                                'lat' : datalist[i]['lat'],
+                                                'lon' : datalist[i]['lon'],
+                                                'posqc' : datalist[i]['posqc'],
+                                                'pres' : datalist[i]['pres'],
+                                                'presqc' : datalist[i]['presqc'],
+                                                'param' : par,
+                                                'val' : datalist[i]['val'],
+                                                'valqc' : datalist[i]['valqc'],
+                                                'dvalqc' : datalist[i]['dvalqc']},
+                                    )
+        except Exception:
+            return JsonResponse({
+                'success': False
+                })
+        return JsonResponse({
+                'success': True
+                })
 
 class DeepObservAllDataList(generics.ListAPIView):
 
@@ -240,46 +325,38 @@ class DeepObservAllDataList(generics.ListAPIView):
         t = DeepObservgetModel()
         t._meta.db_table='data\".\"'+platform
         prejson = json.loads(request.body)
-        metalist = prejson['meta']
-        with transaction.atomic():
-            for i in range(len(metalist)):
-                 obj, created = Parameter.objects.get_or_create(
-                                    pname = metalist[i]['pname'],
-                                    defaults={
-                                            'pname' : metalist[i]['pname'],
-                                            'unit' : metalist[i]['init'],
-                                            'stand_name' : metalist[i]['stand_name'],
-                                            'long_name' : metalist[i]['long_name'],
-                                            'fval' : metalist[i]['fval'],
-                                            'fval_qc' : metalist[i]['fval_qc'],},
-                                )
-        datalist = prejson['data']
-        with transaction.atomic():
-            for i in range(len(datalist)):
-                par=Parameter.objects.get(pname=datalist[i]['param'])
-                obj, created = t.objects.update_or_create(
-                                    dt = datalist[i]['dt'],
-                                    lat = datalist[i]['lat'],
-                                    lon = datalist[i]['lon'],
-                                    param = par,
-                                    pres = datalist[i]['pres'],
-                                    defaults={
-                                            'dt' : datalist[i]['dt'],
-                                            'lat' : datalist[i]['lat'],
-                                            'lon' : datalist[i]['lon'],
-                                            'posqc' : datalist[i]['posqc'],
-                                            'pres' : datalist[i]['pres'],
-                                            'presqc' : datalist[i]['presqc'],
-                                            'param' : par,
-                                            'val' : datalist[i]['val'],
-                                            'valqc' : datalist[i]['valqc'],
-                                            'dvalqc' : datalist[i]['dvalqc'],
-                                            'rval' : datalist[i]['rval'],
-                                            'rvalqc' : datalist[i]['rvalqc']},
-                                )
-        return Response(created)
-         
-
+        try:
+            datalist = prejson['data']
+            with transaction.atomic():
+                for i in range(len(datalist)):
+                    par=Parameter.objects.get(pname=datalist[i]['param'])
+                    obj, created = t.objects.update_or_create(
+                                        dt = datalist[i]['dt'],
+                                        lat = datalist[i]['lat'],
+                                        lon = datalist[i]['lon'],
+                                        param = par,
+                                        pres = datalist[i]['pres'],
+                                        defaults={
+                                                'dt' : datalist[i]['dt'],
+                                                'lat' : datalist[i]['lat'],
+                                                'lon' : datalist[i]['lon'],
+                                                'posqc' : datalist[i]['posqc'],
+                                                'pres' : datalist[i]['pres'],
+                                                'presqc' : datalist[i]['presqc'],
+                                                'param' : par,
+                                                'val' : datalist[i]['val'],
+                                                'valqc' : datalist[i]['valqc'],
+                                                'dvalqc' : datalist[i]['dvalqc'],
+                                                'rval' : datalist[i]['rval'],
+                                                'rvalqc' : datalist[i]['rvalqc']},
+                                    )
+        except Exception:
+            return JsonResponse({
+                'success': False
+                })
+        return JsonResponse({
+                'success': True
+                })
 
 class DeepObservDataList(generics.ListAPIView):
 
@@ -372,8 +449,36 @@ def poseidon_platform_parameters_with_measurements_between(request):
     
     return JsonResponse({ "data" : results[0][0]})
 
+class Poseidon_db_List(generics.ListAPIView):
+    #Only staff users allowed
+    #permission_classes = (UserPermission, )
+
+    def get_queryset(self):
+        platform = self.kwargs['platform']
+        t = getModel_no_dvalqc()
+        t._meta.db_table='public\".\"'+platform
+        queryset=t.objects.all()
+        return queryset
+    
+    def get_serializer_class(self):
+        platform = self.kwargs['platform']
+        t = getModel_no_dvalqc()
+        t._meta.db_table='public\".\"'+platform
+        serializer_class = NoDvalqcDataSerializer
+        serializer_class.Meta.model=t
+        return serializer_class
+
+    filter_backends = (DjangoFilterBackend,)
+    Field.register_lookup(NotEqual)
+    filter_fields = {
+            'dt': ['lt', 'gt', 'lte', 'gte', 'icontains'],
+            'pres': ['lt', 'gt', 'lte', 'gte', 'in'],
+            'param__id' : ['exact','ne', 'in'], 
+        }
+
+# End of Views for db_download service
 ################################################################################################################
-#views for user authentication
+#Views for user authentication
 
 User = get_user_model()
 
@@ -421,70 +526,5 @@ def logout_user(request):
     logout(request)
     return response
 
-
-class Poseidon_db_List(generics.ListAPIView):
-    #Only staff users allowed
-    #permission_classes = (UserPermission, )
-
-    def get_queryset(self):
-        platform = self.kwargs['platform']
-        t = getModel_no_dvalqc()
-        t._meta.db_table='public\".\"'+platform
-        queryset=t.objects.all()
-        return queryset
-    
-    def get_serializer_class(self):
-        platform = self.kwargs['platform']
-        t = getModel_no_dvalqc()
-        t._meta.db_table='public\".\"'+platform
-        serializer_class = NoDvalqcDataSerializer
-        serializer_class.Meta.model=t
-        return serializer_class
-
-    filter_backends = (DjangoFilterBackend,)
-    Field.register_lookup(NotEqual)
-    filter_fields = {
-            'dt': ['lt', 'gt', 'lte', 'gte', 'icontains'],
-            'pres': ['lt', 'gt', 'lte', 'gte', 'in'],
-            #'presqc': ['exact', 'ne', 'in', 'lt', 'gt', 'lte', 'gte'], #notin
-            #'param': ['exact'],
-            'param__id' : ['exact','ne', 'in'], #notin
-            #'val': ['lt', 'gt', 'lte', 'gte'],
-            #'valqc': ['exact', 'ne', 'in', 'lt', 'gt', 'lte', 'gte'] #notin
-        }
-
-@csrf_exempt
-def poseidon_db_request (request):
-    if request.method == 'POST':
-        platform = request.POST.get('platform', None)
-        querystring = request.POST.get('querystring', None)
-        r=Request.objects.filter(Q(platform=platform), Q(querystring=querystring))
-        if r.exists():
-            return JsonResponse({ "success" : False, "id" : r[0].id})
-        else:
-             new_request=Request.objects.create(platform=platform, querystring=querystring)
-             new_request.save()
-             return JsonResponse({ "success" : True, "id" : new_request.id})
-    else:
-        result=Request.objects.first()
-        return JsonResponse({ "id" : result.id})
-
-@csrf_exempt
-def poseidon_db_product (request):
-    if request.method == 'POST':
-        file_path = request.POST.get('file_path', None)
-        creation_date = request.POST.get('creation_date', None)
-        p=Product.objects.filter(Q(file_path=file_path), Q(creation_date=creation_date))
-        if p.exists():
-            return JsonResponse({ "success" : False, "id" : p[0].id})
-        else:
-             new_product=Product.objects.create(file_path=file_path, creation_date=creation_date)
-             new_product.save()
-             return JsonResponse({ "success" : True, "id" : new_product.id})
-    else:
-        product=Product.objects.first()
-        return JsonResponse({ "id" : product.id})
-
-class ProductRequestsList(generics.ListAPIView):
-    queryset = ProductRequest.objects.all()
-    serializer_class = ProductRequestsSerializer
+#End of Views for user authentication
+################################################################################################################

@@ -2,7 +2,7 @@ from rest_framework.filters import OrderingFilter
 from django_filters.rest_framework import DjangoFilterBackend, FilterSet
 from django_filters import rest_framework as filters
 from distutils.util import strtobool
-from .models import Platform, Institution, Parameter, Ferrybox
+from .models import Platform, Institution, Parameter, Ferrybox, Cdf_Institution
 from django import forms
 #imports for custom lookups
 from .lookups import NotEqual, NotIn
@@ -41,7 +41,8 @@ class PlatformFilter(FilterSet):
             'inst_ref' : [],
             'assembly_center' : ['exact', 'ne', 'in'],
             'site_code' : [],
-            'source' : []
+            'source' : [],
+            'cdf_inst': ['exact']
 
         }
 
@@ -58,6 +59,19 @@ class InstitutionFilter(FilterSet):
             'abrv' : ['exact', 'ne', 'in', 'icontains'], #notin
             'country' : ['exact', 'ne', 'in', 'icontains'], #notin
             'cdf_name' : [] 
+        }
+
+class Cdf_InstitutionFilter(FilterSet):
+    Field.register_lookup(NotEqual)
+    #Field.register_lookup(NotIn)
+
+    class Meta:
+        model = Cdf_Institution
+        fields = {
+            #filters:'exact','ne', 'lt', 'gt', 'lte', 'gte', 'in', icontains
+            'id': ['exact', 'ne', 'in'], #notin
+            'name' : ['exact', 'ne', 'icontains'],
+            'inst_id' : ['exact', 'in']
         }
 
 class ParameterFilter(FilterSet):
