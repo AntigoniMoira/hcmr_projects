@@ -13,6 +13,7 @@ urlpatterns = [
         #data urls
         url(r'^platforms/', views.PlatformList.as_view(),name='platform_list'),
         url(r'^institutions/', views.InstitutionList.as_view(),name='institution_list'),
+        url(r'^cdf_institutions/', views.Cdf_InstitutionList.as_view(),name='cdf_institution_list'),
         url(r'^parameters/', views.ParameterList.as_view(),name='parameter_list'),
         url(r'^deep_observ/(?P<platform>\w+)/', views.DeepObservDataList.as_view(),name='deep_observ_data_list'),
         #deep_observ_all to return rval and rvalqc
@@ -25,8 +26,5 @@ urlpatterns = [
         url(r'^poseidon_platform_parameters_with_measurements_between',  
                 views.poseidon_platform_parameters_with_measurements_between, name='poseidon_platform_parameters_with_measurements_between'),
         url(r'^poseidon_db_list/(?P<platform>\w+)/', views.Poseidon_db_List.as_view(),name='poseidon_db_list'),
-        url(r'^poseidon_db_request/',  views.poseidon_db_request, name='poseidon_db_request'),
-        url(r'^poseidon_db_product/',  views.poseidon_db_product, name='poseidon_db_product'),
-        url(r'^poseidon_db_product_requests/',  views.ProductRequestsList.as_view(), name='poseidon_db_product_request'),
     
 ]

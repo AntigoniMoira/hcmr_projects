@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Platform, Institution, Parameter, Ferrybox, Request, Product, ProductRequest
+from .models import Platform, Institution, Parameter, Ferrybox, Cdf_Institution
 # Register your models here.
 
 class PlatformAdmin(admin.ModelAdmin):
@@ -14,7 +14,12 @@ class InstitutionAdmin(admin.ModelAdmin):
     search_fields = ['id', 'name_native', 'abrv', 'country', 'cdf_name']
     list_per_page=10
 
-admin.site.register(Institution, InstitutionAdmin)
+class Cdf_InstitutionAdmin(admin.ModelAdmin):
+    list_display = ['id', 'name', 'inst_id']
+    search_fields = ['id', 'name', 'inst_id']
+    list_per_page=10
+
+admin.site.register(Cdf_Institution, Cdf_InstitutionAdmin)
 
 class ParameterAdmin(admin.ModelAdmin):
     list_display = ['id', 'pname', 'unit', 'stand_name', 'category_short']
@@ -30,24 +35,4 @@ class FerryboxAdmin(admin.ModelAdmin):
 
 admin.site.register(Ferrybox, FerryboxAdmin)
 
-class RequestAdmin(admin.ModelAdmin):
-    list_display = ['id', 'platform', 'querystring']
-    search_fields = ['id', 'platform', 'querystring']
-    list_per_page=10
-
-admin.site.register(Request, RequestAdmin)
-
-class ProductAdmin(admin.ModelAdmin):
-    list_display = ['id', 'file_path', 'creation_date']
-    search_fields = ['id', 'file_path', 'creation_date']
-    list_per_page=10
-
-admin.site.register(Product, ProductAdmin)
-
-class ProductRequestAdmin(admin.ModelAdmin):
-    list_display = ['id', 'product_id', 'request_id']
-    search_fields = ['id', 'product_id', 'request_id']
-    list_per_page=10
-
-admin.site.register(ProductRequest, ProductRequestAdmin)
 
