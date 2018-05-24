@@ -1,5 +1,5 @@
 import json
-
+import re
 from datetime import datetime
 from decimal import Decimal
 
@@ -527,4 +527,91 @@ def logout_user(request):
     return response
 
 #End of Views for user authentication
+################################################################################################################
+
+#Start of Views for online_data service
+################################################################################################################
+
+def ts_latest_data(request, platform):
+    t = getModel()
+    t._meta.db_table='data\".\"'+platform
+    last=t.objects.latest('dt')
+    last_dt=last.dt
+    latest_data=t.objects.filter(dt=last_dt)
+
+    if (last_dt.month <10):
+        start_date=str(last_dt.year)+"-0"+str(last_dt.month)
+    else:
+        start_date=str(last_dt.year)+"-"+str(last_dt.month)
+    end_date=start_date
+    
+    # Get a cursor on the connection
+    cursor = connection.cursor()
+
+    # Now, callproc to the name of the procedure/function and pass a list of parameters inside
+    cursor.callproc("public.poseidon_platform_parameters_with_measurements_between", [platform, start_date, end_date])
+
+    # Fetch new a list of all the results
+    results = cursor.fetchall()[0][0]
+    param_string=results[0]['param']
+    param_list= param_string.split("#")
+    result_dict={'info':{
+        'platform': platform,
+        'date':last_dt,
+        'lat':last.lat,
+        'lon':last.lon },
+        'params':{}
+    }
+    for i in range(0,len(param_list)):
+        row=param_list[i]
+        parts=re.split('\[|\]|@|\^|<|>', row)
+        description=parts[0]+"["+parts[1]+"] "+parts[3] +" ("+parts[7]+")"
+        if parts[1] not in result_dict['params'].keys():
+            result_dict['params'][parts[1]]={}
+        result_dict['params'][parts[1]][parts[3]]={
+            "description": description,
+            "val": 9999,
+            "valqc":9
+        }
+    
+    for i in range(0,len(latest_data)):
+        parameter=latest_data[i].param.pname
+        pressure=str(int(latest_data[i].pres))+"m"
+        result_dict['params'][parameter][pressure]['val']=latest_data[i].val
+        result_dict['params'][parameter][pressure]['valqc']=latest_data[i].valqc
+
+    # Close the cursor
+    cursor.close()
+    return JsonResponse(result_dict)
+
+def pr_latest_data(request, platform):
+    t = getModel()
+    t._meta.db_table='data\".\"'+platform
+    last=t.objects.latest('dt')
+    last_dt=last.dt
+    latest_data=t.objects.filter(dt=last_dt)
+
+    result_dict={'info':{
+        'platform': platform,
+        'date':last_dt,
+        'lat':last.lat,
+        'lon':last.lon },
+        'params':{}
+    }
+
+
+    for i in range(0,len(latest_data)):
+        parameter=latest_data[i].param.pname
+        if parameter not in result_dict['params'].keys():
+            result_dict['params'][parameter]=[]
+        result_dict['params'][parameter].append({
+            'pres': latest_data[i].pres,
+            'val': latest_data[i].val,
+            'valqc': latest_data[i].valqc
+        })
+        
+    
+    return JsonResponse(result_dict)
+
+#End of Views for online_data service
 ################################################################################################################

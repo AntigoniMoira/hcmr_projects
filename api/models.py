@@ -116,7 +116,7 @@ def getModel():
         class Meta:
             # No database table creation or deletion operations will be performed for this model.
             managed = False
-            ordering = ('id', )
+            ordering = ('id', 'dt', )
 
     return MyClass
 
