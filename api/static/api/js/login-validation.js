@@ -17,14 +17,15 @@ const loginValidation = function () {
 
         ajax.post(HomeRoutes.home.login, login_data).then((return_data) => {
             //edw na mpei loader
-            if (return_data.success === true) {
-              window.location.href = return_data.redirectUri;
+           if (return_data.success === true) {
+              window.location.href = $("input[name='next']").val();
             } else if (return_data.success === false) {
               $("#login-fail-message").html("<h4> *" + return_data.message + "</h4>");
             }
           }).catch((error) => {
            //edw na kryftei o loader
             const err = new AjaxError(error);
+            console.log(err);
             $("#login-fail-message").html("<h4> *" + err.msg + "</h4>");
           });
     });//submit event END

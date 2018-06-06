@@ -65,7 +65,7 @@ from rest_framework.permissions import (
 from oauth2_provider.views.generic import ProtectedResourceView
 
 from .utils import cURL_request
-#from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required
 
 
 class ApiEndpoint(ProtectedResourceView):
@@ -476,6 +476,20 @@ class Poseidon_db_List(generics.ListAPIView):
             'param__id' : ['exact','ne', 'in'], 
         }
 
+def poseidon_db_unique_dt(request):
+    platform_name=request.GET.get('platform', '')
+    start_date=request.GET.get('start_date', '')
+    end_date=request.GET.get('end_date', '')
+    t = getModel_no_dvalqc()
+    t._meta.db_table='public\".\"'+platform_name
+    queryset_dt=t.objects.values('dt').filter(Q(dt__gte=start_date), Q(dt__lte=end_date)).distinct('dt')
+    queryset_pres=t.objects.values('pres').filter(Q(dt__gte=start_date), Q(dt__lte=end_date)).order_by('pres').distinct('pres')
+    dt_list = [ obj for obj in queryset_dt ]
+    count_dt=len(dt_list)
+    pres_list = [ obj for obj in queryset_pres ]
+    count_pres=len(pres_list)
+    return JsonResponse({'count_dt': count_dt,'date' : dt_list, 'count_pres': count_pres,'pressure' : pres_list})
+
 # End of Views for db_download service
 ################################################################################################################
 #Views for user authentication
@@ -498,15 +512,10 @@ class UserLoginAPIView(APIView):
             new_data = serializer.data
             user = authenticate(request, username=new_data['username'], password=new_data['password'])
             login(request, user)
-            #token = Token.objects.create(user=user)
-            curl_res = cURL_request(new_data['username'], new_data['password'])
-            access_token=json.loads(curl_res.text)['access_token']
             new_data['password']=''
             response = JsonResponse({
-                'success': True,
-                'redirectUri': reverse('index')
+                'success': True
             })
-            response.set_cookie('access_token', access_token)
             return response
         else:
             return JsonResponse({
@@ -515,14 +524,16 @@ class UserLoginAPIView(APIView):
             })
 
     def get(self, request, *args, **kwargs):
+        print(request.user)
         if request.user.is_authenticated:
             return HttpResponseRedirect('../index')
-        return render(request, 'api/login.html')
+        #return render(request, 'api/login.html')
+        return HttpResponseRedirect('http://localhost:9000/webapp/home/')
 
+@login_required()
 def logout_user(request):
     #request.user.auth_token.delete()
     response = HttpResponseRedirect('/api/login/')
-    response.delete_cookie('access_token')
     logout(request)
     return response
 

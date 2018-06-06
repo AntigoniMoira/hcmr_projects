@@ -26,14 +26,14 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['10.6.1.16', 'localhost']
+ALLOWED_HOSTS = ['localhost','10.6.1.16']
 
 
 # Application definition
 
 INSTALLED_APPS = [
     'api',
-    "sslserver",
+    'sslserver',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -55,13 +55,13 @@ REST_FRAMEWORK = {
         #'rest_framework.permissions.IsAuthenticatedOrReadOnly',
     #),
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework.authentication.SessionAuthentication',
-        #'oauth2_provider.contrib.rest_framework.OAuth2Authentication',
+        #'rest_framework.authentication.SessionAuthentication',
+        'oauth2_provider.contrib.rest_framework.OAuth2Authentication',
     )
 }
 
 AUTHENTICATION_BACKENDS = (
-    #'oauth2_provider.backends.OAuth2Backend',
+    'oauth2_provider.backends.OAuth2Backend',
     # Uncomment following if you want to access the admin
     'django.contrib.auth.backends.ModelBackend',
 )
@@ -69,12 +69,12 @@ AUTHENTICATION_BACKENDS = (
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    #'corsheaders.middleware.CorsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    #'oauth2_provider.middleware.OAuth2TokenMiddleware',
+    'oauth2_provider.middleware.OAuth2TokenMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
 ]
 
@@ -110,6 +110,7 @@ WSGI_APPLICATION = 'hcmr_poseidon.wsgi.application'
 }'''
 
 #Place DATABASES ={...} here:
+
 
 
 
