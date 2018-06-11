@@ -57,12 +57,16 @@ from rest_framework.response import Response
 from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST
 from rest_framework.views import APIView
 from rest_framework.authtoken.models import Token
+from oauth2_provider.contrib.rest_framework import OAuth2Authentication
 
 from rest_framework.permissions import (
     AllowAny,
+    IsAuthenticated,
 )
 
-from oauth2_provider.views.generic import ProtectedResourceView
+from oauth2_provider.views.generic import ProtectedResourceView, ScopedProtectedResourceView
+from oauth2_provider.decorators import protected_resource
+from oauth2_provider.contrib.rest_framework import TokenHasReadWriteScope, TokenHasScope, IsAuthenticatedOrTokenHasScope
 
 from .utils import cURL_request
 from django.contrib.auth.decorators import login_required
@@ -70,7 +74,8 @@ from django.contrib.auth.decorators import login_required
 
 class ApiEndpoint(ProtectedResourceView):
     def get(self, request, *args, **kwargs):
-        return HttpResponse('Hello, OAuth2!')
+        #return HttpResponse('Hello, OAuth2!')
+        return JsonResponse({'data': 'Hello from OAuth2!'})
 
 def index(request):
     if not request.user.is_authenticated:
@@ -78,13 +83,18 @@ def index(request):
     else:
         return render(request, 'api/index.html')
 
+@login_required
 def help(request):
-    return render(request, 'api/help.html')
+   # return render(request, 'api/help.html')
+   return JsonResponse({'data': 'Hello from OAuth2!'})
 
 def poseidon_db(request):
     return render(request, 'api/poseidon_db.html')
 
 class PlatformList(generics.ListAPIView):
+    #authentication_classes = [OAuth2Authentication]
+    permission_classes = [IsAuthenticatedOrTokenHasScope, UserPermission]
+    required_scopes = ['read']
     queryset = Platform.objects.all()
     #Only staff users allowed
     #permission_classes = (UserPermission, )
@@ -528,12 +538,12 @@ class UserLoginAPIView(APIView):
         if request.user.is_authenticated:
             return HttpResponseRedirect('../index')
         #return render(request, 'api/login.html')
-        return HttpResponseRedirect('http://localhost:9000/webapp/home/')
+        return render(request, 'api/login.html')
 
 @login_required()
 def logout_user(request):
     #request.user.auth_token.delete()
-    response = HttpResponseRedirect('/api/login/')
+    response = HttpResponseRedirect('api/login/')
     logout(request)
     return response
 
