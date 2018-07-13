@@ -10,6 +10,9 @@ urlpatterns = [
         url(r'^register/', views.UserCreateAPIView.as_view(), name='register'),
         url(r'^login/', views.UserLoginAPIView.as_view(), name='login'),
         url(r'^logout/', views.logout_user, name='logout'),
+        url(r'^termsandconditions$', views.TermsAndConditions, name='termsandconditions'),
+        url(r'^activate/', views.ActivateUser.as_view(), name='activate_user'),
+        url(r'^delete_user/', views.DeleteUser.as_view(), name='delete_user'),
         #data urls
         url(r'^platforms/', views.PlatformList.as_view(),name='platform_list'),
         url(r'^institutions/', views.InstitutionList.as_view(),name='institution_list'),

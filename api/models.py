@@ -2,7 +2,30 @@ from __future__ import unicode_literals
 from django.db.models.base import ModelBase
 
 from django.db import models
+from django.contrib.auth.models import User
 
+class UserProfile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE) #otan diagrafei enas Auth User diagrafetai to UserProfile alla oxi to antistrofo
+    userPhone = models.CharField(max_length=30)
+    birthDate = models.DateField(auto_now=False, auto_now_add=False, null=True)
+    SEX_CHOICES = (
+        ('M', 'Male'),
+        ('F', 'Female'),
+        ('O', 'Other'),
+    )
+    sex = models.CharField(max_length=1, choices=SEX_CHOICES , default='M') #na valoume choices
+    country = models.CharField(max_length=50, default='None')
+    institution = models.CharField(max_length=100, default='None')
+    description = models.CharField(max_length=500, default='None')
+
+    class Meta:
+        verbose_name_plural = 'UserProfiles'
+        ordering = ('userPhone', )#ordering me vash to username
+        db_table = 'django\".\"userprofile'
+
+
+    def __str__(self):
+        return self.userPhone
 
 class Institution(models.Model):
     name_native = models.CharField(max_length=100)

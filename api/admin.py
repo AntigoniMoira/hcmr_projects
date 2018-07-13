@@ -1,6 +1,13 @@
 from django.contrib import admin
-from .models import Platform, Institution, Parameter, Ferrybox, Cdf_Institution
+from .models import Platform, Institution, Parameter, Ferrybox, Cdf_Institution, UserProfile
 # Register your models here.
+
+class UserProfileAdmin(admin.ModelAdmin):
+    list_display = ['user', 'userPhone', 'birthDate', 'sex', 'country', 'institution', 'description']
+    search_fields = ['user', 'userPhone', 'birthDate', 'sex', 'country', 'institution', 'description']
+    list_per_page =10
+
+admin.site.register(UserProfile, UserProfileAdmin)
 
 class PlatformAdmin(admin.ModelAdmin):
     list_display = ['id', 'pid', 'tspr', 'type', 'platform_code']

@@ -48,14 +48,20 @@ INSTALLED_APPS = [
     'corsheaders'
 ]
 
+OAUTH2_PROVIDER = {
+    'ACCESS_TOKEN_EXPIRE_SECONDS': 60 * 60 * 24,
+    # this is the list of available scopes
+    'SCOPES': {'read': 'Read scope', 'write': 'Write scope', 'groups': 'Access to your groups'}
+}
+
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
     'PAGE_SIZE': 10,
     #'DEFAULT_PERMISSION_CLASSES': (
-        #'rest_framework.permissions.IsAuthenticatedOrReadOnly',
+     #   'rest_framework.permissions.IsAuthenticated',
     #),
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        #'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
         'oauth2_provider.contrib.rest_framework.OAuth2Authentication',
     )
 }
@@ -111,10 +117,6 @@ WSGI_APPLICATION = 'hcmr_poseidon.wsgi.application'
 
 #Place DATABASES ={...} here:
 
-
-
-
-
 # Password validation
 # https://docs.djangoproject.com/en/1.11/ref/settings/#auth-password-validators
 
@@ -134,6 +136,11 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
+EMAIL_BACKEND = "sendgrid_backend.SendgridBackend"
+#sendgrid key here
+SENDGRID_SANDBOX_MODE_IN_DEBUG = False
+
+
 # Internationalization
 # https://docs.djangoproject.com/en/1.11/topics/i18n/
 
@@ -148,6 +155,7 @@ USE_L10N = True
 USE_TZ = True
 
 CORS_ORIGIN_ALLOW_ALL = True
+
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.11/howto/static-files/
