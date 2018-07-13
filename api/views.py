@@ -50,7 +50,7 @@ from .lookups import NotEqual
 from .custom_permissions import UserPermission
 
 #from rest_framework
-from rest_framework import generics
+from rest_framework import generics, renderers
 from rest_framework.filters import OrderingFilter
 from django_filters.rest_framework import DjangoFilterBackend, FilterSet
 from rest_framework.response import Response
@@ -70,6 +70,8 @@ from oauth2_provider.contrib.rest_framework import TokenHasReadWriteScope, Token
 
 from .utils import cURL_request
 from django.contrib.auth.decorators import login_required
+from django.core.mail import send_mail
+from django.template.loader import render_to_string
 
 
 class ApiEndpoint(ProtectedResourceView):
@@ -93,8 +95,8 @@ def poseidon_db(request):
 
 class PlatformList(generics.ListAPIView):
     #authentication_classes = [OAuth2Authentication]
-    permission_classes = [IsAuthenticatedOrTokenHasScope, UserPermission]
-    required_scopes = ['read']
+    #permission_classes = [IsAuthenticatedOrTokenHasScope, UserPermission]
+    #required_scopes = ['read']
     queryset = Platform.objects.all()
     #Only staff users allowed
     #permission_classes = (UserPermission, )
@@ -490,10 +492,12 @@ def poseidon_db_unique_dt(request):
     platform_name=request.GET.get('platform', '')
     start_date=request.GET.get('start_date', '')
     end_date=request.GET.get('end_date', '')
+    params=request.GET.get('params', '').split(',')
+    print(params)
     t = getModel_no_dvalqc()
     t._meta.db_table='public\".\"'+platform_name
-    queryset_dt=t.objects.values('dt').filter(Q(dt__gte=start_date), Q(dt__lte=end_date)).distinct('dt')
-    queryset_pres=t.objects.values('pres').filter(Q(dt__gte=start_date), Q(dt__lte=end_date)).order_by('pres').distinct('pres')
+    queryset_dt=t.objects.values('dt').filter(Q(param__in=params), Q(dt__gte=start_date), Q(dt__lte=end_date)).distinct('dt')
+    queryset_pres=t.objects.values('pres').filter(Q(param__in=params), Q(dt__gte=start_date), Q(dt__lte=end_date)).order_by('pres').distinct('pres')
     dt_list = [ obj for obj in queryset_dt ]
     count_dt=len(dt_list)
     pres_list = [ obj for obj in queryset_pres ]
@@ -503,13 +507,89 @@ def poseidon_db_unique_dt(request):
 # End of Views for db_download service
 ################################################################################################################
 #Views for user authentication
+def TermsAndConditions (request):
+    return render(request, 'api/terms.html')
 
 User = get_user_model()
 
 class UserCreateAPIView(generics.CreateAPIView):
-    #permission_classes = [AllowAny]
+    permission_classes = [AllowAny]
+    #renderer_classes = [renderers.JSONRenderer]
     serializer_class = UserCreateSerializer
     queryset = User.objects.all()
+
+    def get(self, request, *args, **kwargs):
+        return render(request, 'api/signup.html')
+
+    def post(self, request, *args, **kwargs):
+        data = request.data
+        serializer = UserCreateSerializer(data=data)
+        if serializer.is_valid(raise_exception=False):
+            new_data = serializer.data
+            serializer.create(serializer.data)
+            subject='[HCMR] Activate User'
+            name=new_data['firstname'] + ' ' +new_data['lastname']
+            html_content=render_to_string('api/activate_user_mail.html', {'name': name, 'country': new_data['country'],
+            'institution': new_data['institution'], 'email': new_data['email'], 'description': new_data['description']})
+            send_mail(subject, name, 'antmoira@gmail.com', ['antmoira@gmail.com'], fail_silently=False, html_message=html_content,)
+            response = JsonResponse({
+                'success': True
+            })
+            return response
+        else:
+            print(serializer.errors)
+            return JsonResponse({
+                'success': False,
+                'message': serializer.errors['non_field_errors'][0]
+            })
+
+class ActivateUser(APIView):
+    #permission_classes = [IsAuthenticatedOrTokenHasScope, UserPermission]
+    def get(self, request, *args, **kwargs):
+        users=User.objects.filter(is_active=False)
+        return render(request, 'api/activate_users.html', {'users': users})
+
+    def post(self, request, *args, **kwargs):
+        email=request.data['email']
+        try:
+            user=User.objects.get(email=email)
+            user.is_active=True
+            user.save()
+            subject='[HCMR] Account Activation'
+            name=user.first_name
+            html_content=render_to_string('api/accept_user_mail.html', {'name': name})
+            send_mail(subject, name, 'antmoira@gmail.com', [email], fail_silently=False, html_message=html_content,)
+            return JsonResponse({
+                'success': True
+            })
+        except Exception:
+            return JsonResponse({
+                'success': False,
+                'message': 'An error occurred. Please try again later.'
+            })
+
+class DeleteUser(APIView):
+    #permission_classes = [IsAuthenticatedOrTokenHasScope, UserPermission]
+
+    def post(self, request, *args, **kwargs):
+        email=request.data['email']
+        reason=request.data['reason']
+        try:
+            user=User.objects.get(email=email)
+            user.delete()
+            subject='[HCMR] Your request has been rejected.'
+            name=user.first_name
+            html_content=render_to_string('api/reject_user_mail.html', {'name': name, 'reason':reason})
+            send_mail(subject, name, 'antmoira@gmail.com', [email], fail_silently=False, html_message=html_content,)
+            return JsonResponse({
+                'success': True
+            })
+        except Exception:
+            return JsonResponse({
+                'success': False,
+                'message': 'An error occurred. Please tre again later.'
+            })
+
 
 class UserLoginAPIView(APIView):
     permission_classes = [AllowAny]
@@ -528,6 +608,7 @@ class UserLoginAPIView(APIView):
             })
             return response
         else:
+            print(serializer.errors)
             return JsonResponse({
                 'success': False,
                 'message': serializer.errors['non_field_errors'][0]

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Platform, Institution, Parameter, Ferrybox, Cdf_Institution
+from .models import Platform, Institution, Parameter, Ferrybox, Cdf_Institution, UserProfile
 #helps to select fields
 from drf_queryfields import QueryFieldsMixin
 from django.contrib.auth import get_user_model
@@ -66,53 +66,67 @@ class ParameterSerializer(QueryFieldsMixin, serializers.ModelSerializer):
 User = get_user_model()
 
 class UserCreateSerializer(serializers.ModelSerializer):
+    firstname = serializers.CharField(allow_blank=False)
+    lastname = serializers.CharField(allow_blank=False)
+    country = serializers.CharField(allow_blank=False)
+    institution = serializers.CharField(allow_blank=True)
+    phone = serializers.CharField(allow_blank=False)
     email = serializers.EmailField(label='Email Address')
-    email2 = serializers.EmailField(label='Confirm Email')
+    password2 = serializers.CharField(allow_blank=False)
+    description = serializers.CharField(allow_blank=False)
     class Meta:
         model = User
         fields = [
-            'username',
+            'firstname',
+            'lastname',
+            'country',
+            'institution',
+            'phone',
             'email',
-            'email2',
             'password',
+            'password2',
+            'description',
         ]
         extra_kwargs = {"password":
+                            {
+                                "write_only": True
+                            },
+                        "password2":
                             {
                                 "write_only": True
                             }
         }
 
-    def validate_email(self, value):
-        data = self.get_initial()
-        email1 = data.get("email2")
-        email2 = value
-        if email1 != email2:
-            raise serializers.ValidationError("Emails must match!")
-        
-        user_qs = User.objects.filter(email=email2)
+    def validate(self, data):
+        email = data.get('email', None)
+        user_qs = User.objects.filter(email=email)
         if user_qs.exists():
-            raise serializers.ValidationError("This user has already registered.")
+            raise serializers.ValidationError("This email is already used.")
+        password1 = data.get("password")
+        password2 = data.get("password2")
+        if password1 != password2:
+            raise serializers.ValidationError("Passwords must match!")
+        return data
 
-        return value
-
-    def validate_email2(self, value):
-        data = self.get_initial()
-        email1 = data.get("email")
-        email2 = value
-        if email1 != email2:
-            raise serializers.ValidationError("Emails must match!")
-        return value
 
     def create (self, validated_data):
-        username = validated_data['username']
+        username = validated_data['email']
         email = validated_data['email']
-        password =  validated_data['password']
+        password =  validated_data['password2']
         user_obj = User(
             username = username,
-            email = email
+            email = email,
+            is_active = False,
         )
         user_obj.set_password(password)
+        user_obj.first_name=validated_data['firstname']
+        user_obj.last_name=validated_data['lastname']
         user_obj.save()
+        institution=validated_data['institution']
+        description=validated_data['description']
+        phone=validated_data['phone']
+        country=validated_data['country']
+        profile = UserProfile.objects.create(user=user_obj, userPhone=phone, country=country, institution=institution, description=description)
         return validated_data
 
 class UserLoginSerializer(serializers.ModelSerializer):
@@ -141,6 +155,8 @@ class UserLoginSerializer(serializers.ModelSerializer):
         if user_obj:
             if not user_obj.check_password(password):
                 raise serializers.ValidationError("Incorect credentials please try again.")
+            if user_obj.is_active==False:
+                raise serializers.ValidationError("Your account has not yet been activated.")
                 
         data['username']=user_obj.username
         return data
