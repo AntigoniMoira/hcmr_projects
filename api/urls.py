@@ -33,5 +33,6 @@ urlpatterns = [
         #online_data service urls
         url(r'^latest_ts/(?P<platform>\w+)/', views.ts_latest_data,name='ts_latest_data'),
         url(r'^latest_pr/(?P<platform>\w+)/', views.pr_latest_data,name='pr_latest_data'),
+        url(r'^online_data_from_mv/', views.OnlineDataList.as_view(),name='online_data_list'),
     
 ]

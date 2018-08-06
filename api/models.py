@@ -228,3 +228,14 @@ def getModel_no_dvalqc():
             ordering = ('dt','pres', 'param__id')
 
     return MyClass
+
+class OnlineData(models.Model):
+    platform = models.TextField(primary_key=True)
+    dt = models.DateTimeField(blank=True, null=True)
+    param = models.SmallIntegerField(blank=True, null=True, default='0')
+    val = models.FloatField(blank=True, null=True)
+    class Meta:
+        # No database table creation or deletion operations will be performed for this model.
+        managed = False
+        verbose_name_plural = 'OnlineData'
+        db_table = 'public\".\"hcmr_online_data_mv'
