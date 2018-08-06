@@ -56,7 +56,7 @@ OAUTH2_PROVIDER = {
 
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
-    'PAGE_SIZE': 10,
+    'PAGE_SIZE': 1000,
     #'DEFAULT_PERMISSION_CLASSES': (
      #   'rest_framework.permissions.IsAuthenticated',
     #),
@@ -116,6 +116,7 @@ WSGI_APPLICATION = 'hcmr_poseidon.wsgi.application'
 }'''
 
 #Place DATABASES ={...} here:
+
 
 # Password validation
 # https://docs.djangoproject.com/en/1.11/ref/settings/#auth-password-validators

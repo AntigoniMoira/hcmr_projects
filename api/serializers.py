@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Platform, Institution, Parameter, Ferrybox, Cdf_Institution, UserProfile
+from .models import Platform, Institution, Parameter, Ferrybox, Cdf_Institution, UserProfile, OnlineData
 #helps to select fields
 from drf_queryfields import QueryFieldsMixin
 from django.contrib.auth import get_user_model
@@ -166,3 +166,9 @@ class NoDvalqcDataSerializer(QueryFieldsMixin, serializers.ModelSerializer):
     class Meta:
         model = None
         fields = ('id', 'dt', 'lat', 'lon', 'posqc', 'pres', 'presqc', 'param', 'val', 'valqc')
+
+class OnlineDataSerializer(QueryFieldsMixin, serializers.ModelSerializer):
+
+    class Meta:
+        model = OnlineData
+        fields = '__all__'

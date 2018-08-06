@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Platform, Institution, Parameter, Ferrybox, Cdf_Institution, UserProfile
+from .models import Platform, Institution, Parameter, Ferrybox, Cdf_Institution, UserProfile, OnlineData
 # Register your models here.
 
 class UserProfileAdmin(admin.ModelAdmin):
@@ -41,5 +41,12 @@ class FerryboxAdmin(admin.ModelAdmin):
     list_per_page=10
 
 admin.site.register(Ferrybox, FerryboxAdmin)
+
+class OnlineDataAdmin(admin.ModelAdmin):
+    list_display = ['platform', 'dt', 'param', 'val']
+    search_fields = ['platform', 'dt', 'param', 'val']
+    list_per_page=10
+
+admin.site.register(OnlineData, OnlineDataAdmin)
 
 

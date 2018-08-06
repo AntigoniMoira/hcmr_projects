@@ -26,6 +26,7 @@ from .serializers import (
     FerryboxSerializer,
     NoDvalqcDataSerializer,
     Cdf_InstitutionSerializer,
+    OnlineDataSerializer,
 )
 from .models import (
     Ferrybox,
@@ -36,6 +37,7 @@ from .models import (
     DeepObservgetModel,
     getModel_no_dvalqc,
     Cdf_Institution,
+    OnlineData,
 )
 from .filters import (
     PlatformFilter,
@@ -633,6 +635,16 @@ def logout_user(request):
 
 #Start of Views for online_data service
 ################################################################################################################
+
+class OnlineDataList(generics.ListAPIView):
+    queryset = OnlineData.objects.all()
+    #Only staff users allowed
+    #permission_classes = (UserPermission, )
+    serializer_class = OnlineDataSerializer
+    #filter_backends = (DjangoFilterBackend, OrderingFilter,)
+    #filter_class = InstitutionFilter
+    ordering_fields = ['platform']
+
 
 def ts_latest_data(request, platform):
     t = getModel()
