@@ -35,6 +35,7 @@ class DeepObservDataSerializer(QueryFieldsMixin, serializers.ModelSerializer):
         ret = super(DeepObservDataSerializer, self).to_representation(obj)
         if ret['rvalqc'] != 9:
             ret['val'] = ret['rval']
+            ret['valqc']=ret['rvalqc']
         ret.pop('rval')
         ret.pop('rvalqc')
         return ret

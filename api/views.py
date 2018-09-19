@@ -620,13 +620,12 @@ class UserLoginAPIView(APIView):
         print(request.user)
         if request.user.is_authenticated:
             return HttpResponseRedirect('../index')
-        #return render(request, 'api/login.html')
         return render(request, 'api/login.html')
 
 @login_required()
 def logout_user(request):
     #request.user.auth_token.delete()
-    response = HttpResponseRedirect('api/login/')
+    response = HttpResponseRedirect('/api/login/')
     logout(request)
     return response
 
