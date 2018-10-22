@@ -42,28 +42,28 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'oauth2_provider',
     'rest_framework',
-    'rest_framework.authtoken',
+    #'rest_framework.authtoken',
     'django_filters',
     'crispy_forms',
-    'corsheaders'
+    'corsheaders',
+    'drf_yasg'
 ]
-
-OAUTH2_PROVIDER = {
-    'ACCESS_TOKEN_EXPIRE_SECONDS': 60 * 60 * 24,
-    # this is the list of available scopes
-    'SCOPES': {'read': 'Read scope', 'write': 'Write scope', 'groups': 'Access to your groups'}
-}
 
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
     'PAGE_SIZE': 1000,
-    #'DEFAULT_PERMISSION_CLASSES': (
-     #   'rest_framework.permissions.IsAuthenticated',
-    #),
+    'DEFAULT_PERMISSION_CLASSES': (
+        #'rest_framework.permissions.IsAuthenticated', #to ekana sxolio gia na doulepsei to swagger
+    ),
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework.authentication.SessionAuthentication',
-        'oauth2_provider.contrib.rest_framework.OAuth2Authentication',
+        #'rest_framework.authentication.SessionAuthentication',
+        'oauth2_provider.contrib.rest_framework.OAuth2Authentication', #to ekana sxolio gia na doulepsei to swagger
     )
+}
+
+OAUTH2_PROVIDER = {
+    'ACCESS_TOKEN_EXPIRE_SECONDS': 30,
+    'RESOURCE_SERVER_INTROSPECTION_URL': 'http://localhost:8000/o/introspect/',
 }
 
 AUTHENTICATION_BACKENDS = (
@@ -108,14 +108,9 @@ WSGI_APPLICATION = 'hcmr_poseidon.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/1.11/ref/settings/#databases
 
-'''DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-    }
-}'''
 
 #Place DATABASES ={...} here:
+
 
 
 # Password validation
@@ -137,9 +132,34 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
-EMAIL_BACKEND = "sendgrid_backend.SendgridBackend"
+#EMAIL_BACKEND = "sendgrid_backend.SendgridBackend"
 #sendgrid key here
-SENDGRID_SANDBOX_MODE_IN_DEBUG = False
+#SENDGRID_SANDBOX_MODE_IN_DEBUG = False
+
+SWAGGER_SETTINGS = {
+    'USE_SESSION_AUTH': False,
+    'EXCLUDE_NAMESPACES': ["internal_urls"],    #  List URL namespaces to ignore
+    'SECURITY_DEFINITIONS': {
+        'Your App API - Swagger': {
+            'type': 'oauth2',
+            #'authorizationUrl': "http://localhost:8000/o/authorize",
+            'tokenUrl': "http://localhost:8000/o/token/",
+            'flow': 'application',
+            'scopes': {
+                'user' : 'User of HCMR',
+                'staff': 'Employee of HCMR',
+                'admin':'Admin User'
+
+            }
+        }
+    },
+    'OAUTH2_CONFIG': {
+        'clientId': 'yourAppClientId',
+        'clientSecret': 'yourAppClientSecret',
+        'appName': 'your application name'
+    },
+}
+
 
 
 # Internationalization
