@@ -45,6 +45,7 @@ from .filters import (
     ParameterFilter,
     FerryboxFilter,
     Cdf_InstitutionFilter,
+    DataFilter,
 )
 
 from .paginations import PlatformPagination
@@ -52,7 +53,7 @@ from .lookups import NotEqual
 from .custom_permissions import UserPermission
 
 #from rest_framework
-from rest_framework import generics, renderers
+from rest_framework import generics, renderers, viewsets
 from rest_framework.filters import OrderingFilter
 from django_filters.rest_framework import DjangoFilterBackend, FilterSet
 from rest_framework.response import Response
@@ -60,6 +61,7 @@ from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST
 from rest_framework.views import APIView
 from rest_framework.authtoken.models import Token
 from oauth2_provider.contrib.rest_framework import OAuth2Authentication
+from rest_framework.decorators import permission_classes
 
 from rest_framework.permissions import (
     AllowAny,
@@ -72,33 +74,46 @@ from oauth2_provider.contrib.rest_framework import TokenHasReadWriteScope, Token
 
 from .utils import cURL_request
 from django.contrib.auth.decorators import login_required
+from django.utils.decorators import method_decorator
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
+from drf_yasg.utils import swagger_auto_schema
 
 
-class ApiEndpoint(ProtectedResourceView):
+#class ApiEndpoint(ProtectedResourceView):
+class ApiEndpoint(APIView):
+    #permission_classes = [UserPermission]
+    #@permission_classes((UserPermission,))
+    authentication_classes = [OAuth2Authentication]
+    permission_classes = [TokenHasScope]
+    #permission_classes =[AllowAny]
+    required_scopes = ['user']
     def get(self, request, *args, **kwargs):
+        #print(request.user.is_staff)
         #return HttpResponse('Hello, OAuth2!')
-        return JsonResponse({'data': 'Hello from OAuth2!'})
-
-def index(request):
-    if not request.user.is_authenticated:
-        return redirect('/api/login/')
-    else:
-        return render(request, 'api/index.html')
+        return JsonResponse({'data': 'Hello, OAuth2!'})
 
 @login_required
 def help(request):
    # return render(request, 'api/help.html')
    return JsonResponse({'data': 'Hello from OAuth2!'})
 
-def poseidon_db(request):
-    return render(request, 'api/poseidon_db.html')
-
 class PlatformList(generics.ListAPIView):
+    """
+    View to list all Platforms in the system.
+
+    * Requires token authentication.
+
+    get:
+    Return a list of all the existing platforms.
+
+    post:
+    Create a new platform instance.
+    * Only admin users are able to access.
+    """
     #authentication_classes = [OAuth2Authentication]
-    #permission_classes = [IsAuthenticatedOrTokenHasScope, UserPermission]
-    #required_scopes = ['read']
+    permission_classes = [AllowAny]
+    #required_scopes = ['user']
     queryset = Platform.objects.all()
     #Only staff users allowed
     #permission_classes = (UserPermission, )
@@ -107,6 +122,16 @@ class PlatformList(generics.ListAPIView):
     filter_class = PlatformFilter
     #pagination_class = PlatformPagination
     ordering_fields = ['id']
+
+    @swagger_auto_schema(
+        private=True,
+        responses={
+            '200': PlatformSerializer,
+            '400': "Bad Request"
+        },
+        security=[],
+        operation_id='Magic Endpoint',
+        operation_summary='This endpoint does some magic!!!')
 
     def post (self, request, *args, **kwargs):
         body_unicode=request.body.decode('utf-8')
@@ -154,8 +179,6 @@ class PlatformList(generics.ListAPIView):
 
 class InstitutionList(generics.ListAPIView):
     queryset = Institution.objects.all()
-    #Only staff users allowed
-    #permission_classes = (UserPermission, )
     serializer_class = InstitutionSerializer
     filter_backends = (DjangoFilterBackend, OrderingFilter,)
     filter_class = InstitutionFilter
@@ -219,27 +242,23 @@ class ParameterList(generics.ListAPIView):
 
 #GET: returns a json with data
 #POST: takes a json and update DB
-class DataList(generics.ListAPIView):
+
+class DataList(viewsets.ModelViewSet):
     #Only staff users allowed
     #permission_classes = (UserPermission, )
 
     def get_queryset(self):
         platform = self.kwargs['platform']
         t = getModel()
-        t._meta.db_table='data\".\"'+platform
-        queryset=t.objects.all()
+        t._meta.db_table = 'data\".\"'+platform
+        queryset = t.objects.all()
         return queryset
-    
-    def get_serializer_class(self):
-        platform = self.kwargs['platform']
-        t = getModel()
-        t._meta.db_table='data\".\"'+platform
-        serializer_class = DataSerializer
-        serializer_class.Meta.model=t
-        return serializer_class
 
+    serializer_class = DataSerializer
     filter_backends = (DjangoFilterBackend, OrderingFilter,)
+    #filter_class = FerryboxFilter
     Field.register_lookup(NotEqual)
+    #filter_fields = ('id', 'dt',)
     filter_fields = {
             #available filters:'exact','ne', 'lt', 'gt', 'lte', 'gte', 'in', icontains
             'id': ['exact', 'ne', 'in', 'lte'], #notin
@@ -419,11 +438,10 @@ class FerryboxDataList(generics.ListAPIView):
 #Views for db_download service
 
 #returns platforms
-#@login_required()
+@protected_resource(scopes=['user'])
 def poseidon_platforms_with_measurements_between(request):
     start_date=request.GET.get('start_date', '')
     end_date=request.GET.get('end_date', '')
-
     # Get a cursor on the connection
     cursor = connection.cursor()
 
@@ -444,7 +462,7 @@ def poseidon_platforms_with_measurements_between(request):
     return JsonResponse({ "data" : data})
 
 #returns platform's parameters
-#@login_required()
+@protected_resource(scopes=['user'])
 def poseidon_platform_parameters_with_measurements_between(request):
     platform_name=request.GET.get('platform', '')
     start_date=request.GET.get('start_date', '')
@@ -463,7 +481,7 @@ def poseidon_platform_parameters_with_measurements_between(request):
     
     return JsonResponse({ "data" : results[0][0]})
 
-class Poseidon_db_List(generics.ListAPIView):
+'''class Poseidon_db_List(generics.ListAPIView):
     #Only staff users allowed
     #permission_classes = (UserPermission, )
 
@@ -488,7 +506,7 @@ class Poseidon_db_List(generics.ListAPIView):
             'dt': ['lt', 'gt', 'lte', 'gte', 'icontains'],
             'pres': ['lt', 'gt', 'lte', 'gte', 'in'],
             'param__id' : ['exact','ne', 'in'], 
-        }
+        }'''
 
 def poseidon_db_unique_dt(request):
     platform_name=request.GET.get('platform', '')
@@ -508,140 +526,15 @@ def poseidon_db_unique_dt(request):
 
 # End of Views for db_download service
 ################################################################################################################
-#Views for user authentication
-def TermsAndConditions (request):
-    return render(request, 'api/terms.html')
 
-User = get_user_model()
-
-class UserCreateAPIView(generics.CreateAPIView):
-    permission_classes = [AllowAny]
-    #renderer_classes = [renderers.JSONRenderer]
-    serializer_class = UserCreateSerializer
-    queryset = User.objects.all()
-
-    def get(self, request, *args, **kwargs):
-        return render(request, 'api/signup.html')
-
-    def post(self, request, *args, **kwargs):
-        data = request.data
-        serializer = UserCreateSerializer(data=data)
-        if serializer.is_valid(raise_exception=False):
-            new_data = serializer.data
-            serializer.create(serializer.data)
-            subject='[HCMR] Activate User'
-            name=new_data['firstname'] + ' ' +new_data['lastname']
-            html_content=render_to_string('api/activate_user_mail.html', {'name': name, 'country': new_data['country'],
-            'institution': new_data['institution'], 'email': new_data['email'], 'description': new_data['description']})
-            send_mail(subject, name, 'antmoira@gmail.com', ['antmoira@gmail.com'], fail_silently=False, html_message=html_content,)
-            response = JsonResponse({
-                'success': True
-            })
-            return response
-        else:
-            print(serializer.errors)
-            return JsonResponse({
-                'success': False,
-                'message': serializer.errors['non_field_errors'][0]
-            })
-
-class ActivateUser(APIView):
-    #permission_classes = [IsAuthenticatedOrTokenHasScope, UserPermission]
-    def get(self, request, *args, **kwargs):
-        users=User.objects.filter(is_active=False)
-        return render(request, 'api/activate_users.html', {'users': users})
-
-    def post(self, request, *args, **kwargs):
-        email=request.data['email']
-        try:
-            user=User.objects.get(email=email)
-            user.is_active=True
-            user.save()
-            subject='[HCMR] Account Activation'
-            name=user.first_name
-            html_content=render_to_string('api/accept_user_mail.html', {'name': name})
-            send_mail(subject, name, 'antmoira@gmail.com', [email], fail_silently=False, html_message=html_content,)
-            return JsonResponse({
-                'success': True
-            })
-        except Exception:
-            return JsonResponse({
-                'success': False,
-                'message': 'An error occurred. Please try again later.'
-            })
-
-class DeleteUser(APIView):
-    #permission_classes = [IsAuthenticatedOrTokenHasScope, UserPermission]
-
-    def post(self, request, *args, **kwargs):
-        email=request.data['email']
-        reason=request.data['reason']
-        try:
-            user=User.objects.get(email=email)
-            user.delete()
-            subject='[HCMR] Your request has been rejected.'
-            name=user.first_name
-            html_content=render_to_string('api/reject_user_mail.html', {'name': name, 'reason':reason})
-            send_mail(subject, name, 'antmoira@gmail.com', [email], fail_silently=False, html_message=html_content,)
-            return JsonResponse({
-                'success': True
-            })
-        except Exception:
-            return JsonResponse({
-                'success': False,
-                'message': 'An error occurred. Please tre again later.'
-            })
-
-
-class UserLoginAPIView(APIView):
-    permission_classes = [AllowAny]
-    serializer_class = UserLoginSerializer
-
-    def post(self, request, *args, **kwargs):
-        data = request.data
-        serializer = UserLoginSerializer(data=data)
-        if serializer.is_valid(raise_exception=False):
-            new_data = serializer.data
-            user = authenticate(request, username=new_data['username'], password=new_data['password'])
-            login(request, user)
-            new_data['password']=''
-            response = JsonResponse({
-                'success': True
-            })
-            return response
-        else:
-            print(serializer.errors)
-            return JsonResponse({
-                'success': False,
-                'message': serializer.errors['non_field_errors'][0]
-            })
-
-    def get(self, request, *args, **kwargs):
-        print(request.user)
-        if request.user.is_authenticated:
-            return HttpResponseRedirect('../index')
-        return render(request, 'api/login.html')
-
-@login_required()
-def logout_user(request):
-    #request.user.auth_token.delete()
-    response = HttpResponseRedirect('/api/login/')
-    logout(request)
-    return response
-
-#End of Views for user authentication
-################################################################################################################
 
 #Start of Views for online_data service
 ################################################################################################################
 
 class OnlineDataList(generics.ListAPIView):
     queryset = OnlineData.objects.all()
-    #Only staff users allowed
-    #permission_classes = (UserPermission, )
+    permission_classes = []
     serializer_class = OnlineDataSerializer
-    #filter_backends = (DjangoFilterBackend, OrderingFilter,)
-    #filter_class = InstitutionFilter
     ordering_fields = ['platform']
 
 

@@ -14,11 +14,24 @@ class PlatformSerializer(QueryFieldsMixin, serializers.ModelSerializer):
         model = Platform
         fields = '__all__'
        
-class DataSerializer(QueryFieldsMixin, serializers.ModelSerializer):
+'''class DataSerializer(QueryFieldsMixin, serializers.ModelSerializer):
 
     class Meta:
         model = None
-        fields = ('id', 'dt', 'lat', 'lon', 'posqc', 'pres', 'presqc', 'param', 'val', 'valqc', 'dvalqc')
+        fields = ('id', 'dt', 'lat', 'lon', 'posqc', 'pres', 'presqc', 'param', 'val', 'valqc', 'dvalqc')'''
+
+class DataSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    dt = serializers.DateTimeField()
+    lat = serializers.CharField()
+    lon = serializers.CharField()
+    posqc = serializers.IntegerField()
+    pres = serializers.CharField()
+    presqc = serializers.IntegerField()
+    param = serializers.PrimaryKeyRelatedField(queryset=Parameter.objects.all())
+    val = serializers.FloatField()
+    valqc = serializers.IntegerField()
+    dvalqc = serializers.IntegerField()
 
 class DeepObservAllDataSerializer(QueryFieldsMixin, serializers.ModelSerializer):
 

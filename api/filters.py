@@ -2,13 +2,32 @@ from rest_framework.filters import OrderingFilter
 from django_filters.rest_framework import DjangoFilterBackend, FilterSet
 from django_filters import rest_framework as filters
 from distutils.util import strtobool
-from .models import Platform, Institution, Parameter, Ferrybox, Cdf_Institution
+from .models import Platform, Institution, Parameter, Ferrybox, Cdf_Institution, getModel
 from django import forms
 #imports for custom lookups
 from .lookups import NotEqual, NotIn
 from django.db.models.fields import Field
 
 BOOLEAN_CHOICES = (('false', 'False'), ('true', 'True'),)
+
+class DataFilter(FilterSet):
+    strict = True
+    
+    class Meta:
+        model = None
+        fields = {
+            'id': ['exact', 'ne', 'in', 'lte'], #notin
+            'dt': ['lt', 'gt', 'lte', 'gte', 'icontains'],
+            'lat': ['lt', 'gt', 'lte', 'gte'],
+            'lon': ['lt', 'gt', 'lte', 'gte'],
+            'posqc': ['exact', 'ne', 'in','lt', 'gt', 'lte', 'gte'], #notin
+            'pres': ['lt', 'gt', 'lte', 'gte'],
+            'presqc': ['exact', 'ne', 'in', 'lt', 'gt', 'lte', 'gte'], #notin
+            'param': ['exact'],
+            'param__id' : ['exact','ne', 'in'], #notin
+            'val': ['lt', 'gt', 'lte', 'gte'],
+            'valqc': ['exact', 'ne', 'in', 'lt', 'gt', 'lte', 'gte'] #notin
+        }
 
 class PlatformFilter(FilterSet):
     Field.register_lookup(NotEqual)
