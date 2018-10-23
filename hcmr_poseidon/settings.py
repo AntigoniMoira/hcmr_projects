@@ -21,45 +21,67 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # See https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-#Place secret key here:
-
-
+#Place secret key here: 
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost','10.6.1.16']
 
 
 # Application definition
 
 INSTALLED_APPS = [
     'api',
-    "sslserver",
+    'sslserver',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'oauth2_provider',
     'rest_framework',
+    #'rest_framework.authtoken',
     'django_filters',
-    'crispy_forms'
+    'crispy_forms',
+    'corsheaders',
+    'drf_yasg'
 ]
 
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
-    'PAGE_SIZE': 100
+    'PAGE_SIZE': 1000,
+    'DEFAULT_PERMISSION_CLASSES': (
+        #'rest_framework.permissions.IsAuthenticated', #to ekana sxolio gia na doulepsei to swagger
+    ),
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        #'rest_framework.authentication.SessionAuthentication',
+        'oauth2_provider.contrib.rest_framework.OAuth2Authentication', #to ekana sxolio gia na doulepsei to swagger
+    )
 }
+
+OAUTH2_PROVIDER = {
+    'ACCESS_TOKEN_EXPIRE_SECONDS': 30,
+    'RESOURCE_SERVER_INTROSPECTION_URL': 'http://localhost:8000/o/introspect/',
+}
+
+AUTHENTICATION_BACKENDS = (
+    'oauth2_provider.backends.OAuth2Backend',
+    # Uncomment following if you want to access the admin
+    'django.contrib.auth.backends.ModelBackend',
+)
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'oauth2_provider.middleware.OAuth2TokenMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
 ]
 
 ROOT_URLCONF = 'hcmr_poseidon.urls'
@@ -86,14 +108,10 @@ WSGI_APPLICATION = 'hcmr_poseidon.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/1.11/ref/settings/#databases
 
-'''DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-    }
-}'''
 
 #Place DATABASES ={...} here:
+
+
 
 # Password validation
 # https://docs.djangoproject.com/en/1.11/ref/settings/#auth-password-validators
@@ -114,6 +132,36 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
+#EMAIL_BACKEND = "sendgrid_backend.SendgridBackend"
+#sendgrid key here
+#SENDGRID_SANDBOX_MODE_IN_DEBUG = False
+
+SWAGGER_SETTINGS = {
+    'USE_SESSION_AUTH': False,
+    'EXCLUDE_NAMESPACES': ["internal_urls"],    #  List URL namespaces to ignore
+    'SECURITY_DEFINITIONS': {
+        'Your App API - Swagger': {
+            'type': 'oauth2',
+            #'authorizationUrl': "http://localhost:8000/o/authorize",
+            'tokenUrl': "http://localhost:8000/o/token/",
+            'flow': 'application',
+            'scopes': {
+                'user' : 'User of HCMR',
+                'staff': 'Employee of HCMR',
+                'admin':'Admin User'
+
+            }
+        }
+    },
+    'OAUTH2_CONFIG': {
+        'clientId': 'yourAppClientId',
+        'clientSecret': 'yourAppClientSecret',
+        'appName': 'your application name'
+    },
+}
+
+
+
 # Internationalization
 # https://docs.djangoproject.com/en/1.11/topics/i18n/
 
@@ -127,8 +175,12 @@ USE_L10N = True
 
 USE_TZ = True
 
+CORS_ORIGIN_ALLOW_ALL = True
+
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.11/howto/static-files/
 
 STATIC_URL = '/static/'
+
+APPEND_SLASH=False

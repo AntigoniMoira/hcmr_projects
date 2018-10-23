@@ -95,3 +95,60 @@ More on git flow [here](https://github.com/nvie/gitflow) or [here](https://www.a
     * ##### `param__id` : =, __ne, __in
     * ##### `val` : __lt, __gt, __lte, __gte
     * ##### `valqc` : =, __ne, __in, __lt, __gt, __lte, __gte
+
+### Update DB
+
+* #### `POST /api/<platform>/` :
+
+It gets a json (example):
+
+```json
+{
+	"meta": [
+		{
+			"fval_qc": "-128",
+			"fval": "-9999.99",
+			"stand_name": "air_temperature",
+			"long_name": "Air temperature in dry bulb",
+			"init": "degrees_C",
+			"pname": "DRYT"
+		},
+		{
+			"fval_qc": "-128",
+			"fval": "-9999.99",
+			"stand_name": "eastward_sea_water_velocity",
+			"long_name": "West-east current component",
+			"init": "m s-1",
+			"pname": "EWCT"
+		}
+    ],
+	"data": [
+		{
+			"presqc": "1",
+			"dvalqc": "0",
+			"param": "DRYT",
+			"val": "8.87",
+			"posqc": "1",
+			"lat": "45.5488",
+			"valqc": "1",
+			"dt": "2018-03-18 00:00:00",
+			"lon": "13.5505",
+			"pres": "-3.5"
+		},
+		{
+			"presqc": "1",
+			"dvalqc": "0",
+			"param": "DRYT",
+			"val": "8.83",
+			"posqc": "1",
+			"lat": "45.5488",
+			"valqc": "1",
+			"dt": "2018-03-18 00:30:00",
+			"lon": "13.5505",
+			"pres": "-3.5"
+		}
+    ]
+}
+```
+
+And returns:
