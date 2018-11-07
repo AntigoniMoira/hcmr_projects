@@ -11,7 +11,7 @@ from django.db import transaction, connection
 from django.db.models.fields import Field
 from django.contrib.auth import get_user_model, authenticate, login, logout, get_user
 from django.urls import reverse
-from django.views.decorators.csrf import csrf_protect,csrf_exempt
+from django.views.decorators.csrf import csrf_protect, csrf_exempt
 
 #from my files
 from .serializers import (
@@ -70,7 +70,7 @@ from rest_framework.permissions import (
 
 from oauth2_provider.views.generic import ProtectedResourceView, ScopedProtectedResourceView
 from oauth2_provider.decorators import protected_resource
-from oauth2_provider.contrib.rest_framework import TokenHasReadWriteScope, TokenHasScope, IsAuthenticatedOrTokenHasScope
+from oauth2_provider.contrib.rest_framework import TokenMatchesOASRequirements, TokenHasReadWriteScope, TokenHasScope
 
 from .utils import cURL_request
 from django.contrib.auth.decorators import login_required
@@ -78,10 +78,14 @@ from django.utils.decorators import method_decorator
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from drf_yasg.utils import swagger_auto_schema
-
+from drf_yasg.inspectors import FilterInspector
+from rest_framework.renderers import JSONRenderer, TemplateHTMLRenderer
+from rest_framework.response import Response
+from rest_framework.decorators import api_view
 
 #class ApiEndpoint(ProtectedResourceView):
 class ApiEndpoint(APIView):
+    swagger_schema = None
     #permission_classes = [UserPermission]
     #@permission_classes((UserPermission,))
     authentication_classes = [OAuth2Authentication]
@@ -93,12 +97,7 @@ class ApiEndpoint(APIView):
         #return HttpResponse('Hello, OAuth2!')
         return JsonResponse({'data': 'Hello, OAuth2!'})
 
-@login_required
-def help(request):
-   # return render(request, 'api/help.html')
-   return JsonResponse({'data': 'Hello from OAuth2!'})
-
-class PlatformList(generics.ListAPIView):
+class PlatformList(generics.ListCreateAPIView):
     """
     View to list all Platforms in the system.
 
@@ -111,30 +110,22 @@ class PlatformList(generics.ListAPIView):
     Create a new platform instance.
     * Only admin users are able to access.
     """
-    #authentication_classes = [OAuth2Authentication]
-    permission_classes = [AllowAny]
-    #required_scopes = ['user']
+    authentication_classes = [OAuth2Authentication]
+    permission_classes = [TokenMatchesOASRequirements]
+    required_alternate_scopes = {
+        "GET": [["user"]],
+        "POST": [["user", "staff", "admin"]],
+    }
     queryset = Platform.objects.all()
-    #Only staff users allowed
-    #permission_classes = (UserPermission, )
     serializer_class = PlatformSerializer
     filter_backends = (DjangoFilterBackend, OrderingFilter,)
     filter_class = PlatformFilter
-    #pagination_class = PlatformPagination
     ordering_fields = ['id']
 
-    @swagger_auto_schema(
-        private=True,
-        responses={
-            '200': PlatformSerializer,
-            '400': "Bad Request"
-        },
-        security=[],
-        operation_id='Magic Endpoint',
-        operation_summary='This endpoint does some magic!!!')
-
+    @swagger_auto_schema(method='post', auto_schema=None)
+    @api_view(['POST'])
     def post (self, request, *args, **kwargs):
-        body_unicode=request.body.decode('utf-8')
+        body_unicode = request.body.decode('utf-8')
         prejson = json.loads(body_unicode)
         datalist = prejson['data']
         try:
@@ -170,53 +161,93 @@ class PlatformList(generics.ListAPIView):
                                                 'inst' : inst},
                                     )
         except Exception:
-            return JsonResponse({
+            return Response({
                 'success': False
                 })
-        return JsonResponse({
+        return Response({
                 'success': True
                 })
 
 class InstitutionList(generics.ListAPIView):
+    """
+    View to list all Institutions in the system.
+
+    * Requires token authentication.
+    """
+    authentication_classes = [OAuth2Authentication]
+    permission_classes = [TokenHasScope]
+    required_scopes = ['user']
     queryset = Institution.objects.all()
     serializer_class = InstitutionSerializer
     filter_backends = (DjangoFilterBackend, OrderingFilter,)
     filter_class = InstitutionFilter
     ordering_fields = ['id']
 
-class Cdf_InstitutionList(generics.ListAPIView):
+class Cdf_InstitutionList(generics.ListCreateAPIView):
+    swagger_schema = None
+    """
+    View to list all Cdf_Institurions in the system.
+
+    * Requires token authentication.
+    * Only admin users are able to access.
+
+    get:
+    Return a list of all the existing cdf_Institutions.
+
+    post:
+    Create a new cdf_Institution instance.
+    """
+    authentication_classes = [OAuth2Authentication]
+    permission_classes = [TokenHasScope]
+    required_scopes = ['admin']
     queryset = Cdf_Institution.objects.all()
     serializer_class = Cdf_InstitutionSerializer
     filter_backends = (DjangoFilterBackend, OrderingFilter,)
     filter_class = Cdf_InstitutionFilter
     ordering_fields = ['id']
 
+    @swagger_auto_schema(method='post', auto_schema=None)
+    @api_view(['POST'])
     def post (self, request, *args, **kwargs):
-        name=request.POST.get('name', None)
-        inst=Cdf_Institution.objects.filter(name=name)
+        name = request.POST.get('name', None)
+        inst = Cdf_Institution.objects.filter(name=name)
         if inst.exists():
-            return JsonResponse({ "success" : False})
+            return Response({ "success" : False})
         else:
-            institution=Institution.objects.get(id=66)
-            new_cdf_inst=Cdf_Institution.objects.create(name=name, inst_id=institution)
+            institution = Institution.objects.get(id=66)
+            new_cdf_inst = Cdf_Institution.objects.create(name=name, inst_id=institution)
             new_cdf_inst.save()
-            return JsonResponse({ "success" : True, "id" : new_cdf_inst.id})
-
-
+            return Response({ "success" : True, "id" : new_cdf_inst.id})
 
 class ParameterList(generics.ListAPIView):
+    """
+    View to list all Parameters in the system.
+
+    * Requires token authentication.
+
+    get:
+    Return a list of all the existing parameters.
+
+    post:
+    Create a new parameter instance.
+    * Only admin users are able to access.
+    """
+    authentication_classes = [OAuth2Authentication]
+    permission_classes = [TokenMatchesOASRequirements]
+    required_alternate_scopes = {
+        "GET": [["user"]],
+        "POST": [["user", "staff", "admin"]],
+    }
     queryset = Parameter.objects.all()
-    #Only staff users allowed
-    #permission_classes = (UserPermission, )
     serializer_class = ParameterSerializer
     filter_backends = (DjangoFilterBackend, OrderingFilter,)
     filter_class = ParameterFilter
     ordering_fields = ['id']
 
-    #Create or update fields in data."<platform>" tables and create parameter in metadata."parameters" if not exists
+    @swagger_auto_schema(method='post', auto_schema=None)
+    @api_view(['POST'])
     def post (self, request, *args, **kwargs):
-        #print(request.data)
-        body_unicode=request.body.decode('utf-8')
+        body_unicode = request.body.decode('utf-8')
         prejson = json.loads(body_unicode)
         metalist = prejson['meta']
         try:
@@ -233,32 +264,47 @@ class ParameterList(generics.ListAPIView):
                                                 'fval_qc' : metalist[i]['fval_qc'],},
                                     )
         except Exception:
-            return JsonResponse({
+            return Response({
                 'success': False
                 })
-        return JsonResponse({
+        return Response({
                 'success': True
                 })
 
-#GET: returns a json with data
-#POST: takes a json and update DB
-
+@swagger_auto_schema(query_serializer=DataSerializer, manual_parameters=('dt',))
+#@method_decorator(name='list', decorator=swagger_auto_schema( filter_inspectors=[DjangoFilterDescriptionInspector] ))
 class DataList(viewsets.ModelViewSet):
-    #Only staff users allowed
-    #permission_classes = (UserPermission, )
+    """
+    View to list all platform's data in the system.
 
+    * Requires token authentication.
+
+    get:
+    Return a list of all the platform's data.
+
+    post:
+    Create new platform's data instance.
+    * Only admin users are able to access.
+    """
+    '''authentication_classes = [OAuth2Authentication]
+    permission_classes = [TokenMatchesOASRequirements]
+    required_alternate_scopes = {
+        "GET": [["user"]],
+        "POST": [["user", "staff", "admin"]],
+    }'''
+    permission_classes = [AllowAny]
+    #manual_parameters = ['id', 'dt']
     def get_queryset(self):
         platform = self.kwargs['platform']
         t = getModel()
         t._meta.db_table = 'data\".\"'+platform
         queryset = t.objects.all()
-        return queryset
+        return queryset\
 
     serializer_class = DataSerializer
     filter_backends = (DjangoFilterBackend, OrderingFilter,)
-    #filter_class = FerryboxFilter
+    #filter_class = DataFilter
     Field.register_lookup(NotEqual)
-    #filter_fields = ('id', 'dt',)
     filter_fields = {
             #available filters:'exact','ne', 'lt', 'gt', 'lte', 'gte', 'in', icontains
             'id': ['exact', 'ne', 'in', 'lte'], #notin
@@ -272,16 +318,17 @@ class DataList(viewsets.ModelViewSet):
             'param__id' : ['exact','ne', 'in'], #notin
             'val': ['lt', 'gt', 'lte', 'gte'],
             'valqc': ['exact', 'ne', 'in', 'lt', 'gt', 'lte', 'gte'] #notin
-        }
+    }
     ordering_fields = ['id']
 
-
-    #Create or update fields in data."<platform>" tables and create parameter in metadata."parameters" if not exists
-    def post (self, request, *args, **kwargs):
+    @swagger_auto_schema(method='post', auto_schema=None)
+    @api_view(['POST'])
+    def post(self, request, *args, **kwargs):
+        #Create or update fields in data."<platform>" tables and create parameter in metadata."parameters" if not exists
         platform = self.kwargs['platform']
         t = getModel()
-        t._meta.db_table='data\".\"'+platform
-        body_unicode=request.body.decode('utf-8')
+        t._meta.db_table = 'data\".\"'+platform
+        body_unicode = request.body.decode('utf-8')
         prejson = json.loads(body_unicode)
         datalist = prejson['data']
         try:
@@ -307,29 +354,48 @@ class DataList(viewsets.ModelViewSet):
                                                 'dvalqc' : datalist[i]['dvalqc']},
                                     )
         except Exception:
-            return JsonResponse({
+            return Response({
                 'success': False
                 })
-        return JsonResponse({
+        return Response({
                 'success': True
                 })
 
-class DeepObservAllDataList(generics.ListAPIView):
+class DeepObservAllDataList(generics.ListCreateAPIView):
+    swagger_schema = None
+    """
+    View to list Deep Observer's data (with rval & rvalqc).
 
+    * Requires token authentication.
+
+    get:
+    Return a list of all the deep observer's data.
+
+    post:
+    Create new deep observer's data instance.
+    * Only admin users are able to access.
+    """
+    authentication_classes = [OAuth2Authentication]
+    permission_classes = [TokenMatchesOASRequirements]
+    required_alternate_scopes = {
+        "GET": [["user"]],
+        "POST": [["user", "staff", "admin"]],
+    }
     def get_queryset(self):
         platform = self.kwargs['platform']
         t = DeepObservgetModel()
-        t._meta.db_table='data\".\"'+platform
-        queryset=t.objects.all()
+        t._meta.db_table = 'data\".\"'+platform
+        queryset = t.objects.all()
         return queryset
     
-    def get_serializer_class(self):
+    '''def get_serializer_class(self):
         platform = self.kwargs['platform']
         t = DeepObservgetModel()
-        t._meta.db_table='data\".\"'+platform
+        t._meta.db_table = 'data\".\"'+platform
         serializer_class = DeepObservAllDataSerializer
-        serializer_class.Meta.model=t
-        return serializer_class
+        serializer_class.Meta.model = t
+        return serializer_class'''
+    serializer_class = DataSerializer
 
     filter_backends = (DjangoFilterBackend, OrderingFilter,)
     Field.register_lookup(NotEqual)
@@ -351,8 +417,6 @@ class DeepObservAllDataList(generics.ListAPIView):
         }
     ordering_fields = ['id']
 
-
-    #Create or update fields in data."<platform>" tables and create parameter in metadata."parameters" if not exists
     def post (self, request, *args, **kwargs):
         platform = self.kwargs['platform']
         t = DeepObservgetModel()
@@ -384,14 +448,25 @@ class DeepObservAllDataList(generics.ListAPIView):
                                                 'rvalqc' : datalist[i]['rvalqc']},
                                     )
         except Exception:
-            return JsonResponse({
+            return Response({
                 'success': False
                 })
-        return JsonResponse({
+        return Response({
                 'success': True
                 })
 
 class DeepObservDataList(generics.ListAPIView):
+    """
+    View to list Deep Observer's data.
+
+    * Requires token authentication.
+
+    get:
+    Return a list of all the deep observer's data.
+    """
+    authentication_classes = [OAuth2Authentication]
+    permission_classes = [TokenHasScope]
+    required_scopes = ['user']
 
     def get_queryset(self):
         platform = self.kwargs['platform']
@@ -407,6 +482,7 @@ class DeepObservDataList(generics.ListAPIView):
         serializer_class = DeepObservDataSerializer
         serializer_class.Meta.model=t
         return serializer_class
+    #serializer_class = DataSerializer
 
     filter_backends = (DjangoFilterBackend, OrderingFilter,)
     Field.register_lookup(NotEqual)
@@ -428,6 +504,17 @@ class DeepObservDataList(generics.ListAPIView):
 
 
 class FerryboxDataList(generics.ListAPIView):
+    """
+    View to list all Ferrybox data in the system.
+
+    * Requires token authentication.
+
+    get:
+    Return a list of all the ferrybox data.
+    """
+    authentication_classes = [OAuth2Authentication]
+    permission_classes = [TokenHasScope]
+    required_scopes = ['user']
     queryset = Ferrybox.objects.all()
     serializer_class = FerryboxSerializer
     filter_backends = (DjangoFilterBackend, OrderingFilter,)
@@ -481,7 +568,7 @@ def poseidon_platform_parameters_with_measurements_between(request):
     
     return JsonResponse({ "data" : results[0][0]})
 
-'''class Poseidon_db_List(generics.ListAPIView):
+class Poseidon_db_List(generics.ListAPIView):
     #Only staff users allowed
     #permission_classes = (UserPermission, )
 
@@ -506,7 +593,7 @@ def poseidon_platform_parameters_with_measurements_between(request):
             'dt': ['lt', 'gt', 'lte', 'gte', 'icontains'],
             'pres': ['lt', 'gt', 'lte', 'gte', 'in'],
             'param__id' : ['exact','ne', 'in'], 
-        }'''
+        }
 
 def poseidon_db_unique_dt(request):
     platform_name=request.GET.get('platform', '')
@@ -532,6 +619,7 @@ def poseidon_db_unique_dt(request):
 ################################################################################################################
 
 class OnlineDataList(generics.ListAPIView):
+    swagger_schema = None
     queryset = OnlineData.objects.all()
     permission_classes = []
     serializer_class = OnlineDataSerializer

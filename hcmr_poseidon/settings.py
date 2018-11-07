@@ -11,7 +11,6 @@ https://docs.djangoproject.com/en/1.11/ref/settings/
 """
 
 import os
-import psycopg2
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -22,11 +21,10 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # SECURITY WARNING: keep the secret key used in production secret!
 #Place secret key here: 
-
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost','10.6.1.16']
+ALLOWED_HOSTS = ['localhost', '10.6.1.16']
 
 
 # Application definition
@@ -58,11 +56,15 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         #'rest_framework.authentication.SessionAuthentication',
         'oauth2_provider.contrib.rest_framework.OAuth2Authentication', #to ekana sxolio gia na doulepsei to swagger
+    ),
+    'DEFAULT_RENDERER_CLASSES': (
+        'rest_framework.renderers.JSONRenderer',
+        'rest_framework.renderers.BrowsableAPIRenderer',
     )
 }
 
 OAUTH2_PROVIDER = {
-    'ACCESS_TOKEN_EXPIRE_SECONDS': 30,
+    #'ACCESS_TOKEN_EXPIRE_SECONDS': 30,
     'RESOURCE_SERVER_INTROSPECTION_URL': 'http://localhost:8000/o/introspect/',
 }
 
@@ -112,7 +114,6 @@ WSGI_APPLICATION = 'hcmr_poseidon.wsgi.application'
 #Place DATABASES ={...} here:
 
 
-
 # Password validation
 # https://docs.djangoproject.com/en/1.11/ref/settings/#auth-password-validators
 
@@ -138,7 +139,6 @@ AUTH_PASSWORD_VALIDATORS = [
 
 SWAGGER_SETTINGS = {
     'USE_SESSION_AUTH': False,
-    'EXCLUDE_NAMESPACES': ["internal_urls"],    #  List URL namespaces to ignore
     'SECURITY_DEFINITIONS': {
         'Your App API - Swagger': {
             'type': 'oauth2',
@@ -183,4 +183,4 @@ CORS_ORIGIN_ALLOW_ALL = True
 
 STATIC_URL = '/static/'
 
-APPEND_SLASH=False
+APPEND_SLASH = False
