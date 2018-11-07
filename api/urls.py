@@ -27,8 +27,8 @@ urlpatterns = [
         views.poseidon_platforms_with_measurements_between, name='poseidon_platforms_with_measurements_between'),
     url(r'^poseidon_platform_parameters_with_measurements_between',
         views.poseidon_platform_parameters_with_measurements_between, name='poseidon_platform_parameters_with_measurements_between'),
-    #url(r'^poseidon_db_list/(?P<platform>\w+)/',
-        #views.Poseidon_db_List.as_view(), name='poseidon_db_list'),
+    url(r'^poseidon_db_list/(?P<platform>\w+)/',
+        views.Poseidon_db_List.as_view(), name='poseidon_db_list'),
     url(r'^poseidon_db_unique_dt/', views.poseidon_db_unique_dt,
         name='poseidon_db_unique_dt'),
     # online_data service urls
