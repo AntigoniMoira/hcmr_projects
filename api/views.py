@@ -568,7 +568,7 @@ def poseidon_platform_parameters_with_measurements_between(request):
     
     return JsonResponse({ "data" : results[0][0]})
 
-'''class Poseidon_db_List(generics.ListAPIView):
+class Poseidon_db_List(generics.ListAPIView):
     #Only staff users allowed
     #permission_classes = (UserPermission, )
 
@@ -593,7 +593,7 @@ def poseidon_platform_parameters_with_measurements_between(request):
             'dt': ['lt', 'gt', 'lte', 'gte', 'icontains'],
             'pres': ['lt', 'gt', 'lte', 'gte', 'in'],
             'param__id' : ['exact','ne', 'in'], 
-        }'''
+        }
 
 def poseidon_db_unique_dt(request):
     platform_name=request.GET.get('platform', '')

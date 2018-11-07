@@ -21,7 +21,6 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # SECURITY WARNING: keep the secret key used in production secret!
 #Place secret key here: 
-
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
@@ -65,7 +64,7 @@ REST_FRAMEWORK = {
 }
 
 OAUTH2_PROVIDER = {
-    'ACCESS_TOKEN_EXPIRE_SECONDS': 30,
+    #'ACCESS_TOKEN_EXPIRE_SECONDS': 30,
     'RESOURCE_SERVER_INTROSPECTION_URL': 'http://localhost:8000/o/introspect/',
 }
 
