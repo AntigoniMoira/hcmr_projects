@@ -113,7 +113,6 @@ WSGI_APPLICATION = 'hcmr_poseidon.wsgi.application'
 
 #Place DATABASES ={...} here:
 
-
 # Password validation
 # https://docs.djangoproject.com/en/1.11/ref/settings/#auth-password-validators
 
@@ -146,17 +145,18 @@ SWAGGER_SETTINGS = {
             'tokenUrl': "http://localhost:8000/o/token/",
             'flow': 'application',
             'scopes': {
-                'user' : 'User of HCMR',
-                'staff': 'Employee of HCMR',
-                'admin':'Admin User'
+                'user' : 'User of HCMR'
+                #'staff': 'Employee of HCMR',
+                #'admin':'Admin User'
 
             }
         }
     },
+    #'DEFAULT_FILTER_INSPECTORS': [],
     'OAUTH2_CONFIG': {
         'clientId': 'yourAppClientId',
         'clientSecret': 'yourAppClientSecret',
-        'appName': 'your application name'
+        'appName': 'Third party'
     },
 }
 

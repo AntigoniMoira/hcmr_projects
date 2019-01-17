@@ -10,25 +10,6 @@ from django.db.models.fields import Field
 
 BOOLEAN_CHOICES = (('false', 'False'), ('true', 'True'),)
 
-class DataFilter(FilterSet):
-    strict = True
-    
-    class Meta:
-        model = None
-        fields = {
-            'id': ['exact', 'ne', 'in', 'lte'], #notin
-            'dt': ['lt', 'gt', 'lte', 'gte', 'icontains'],
-            'lat': ['lt', 'gt', 'lte', 'gte'],
-            'lon': ['lt', 'gt', 'lte', 'gte'],
-            'posqc': ['exact', 'ne', 'in','lt', 'gt', 'lte', 'gte'], #notin
-            'pres': ['lt', 'gt', 'lte', 'gte'],
-            'presqc': ['exact', 'ne', 'in', 'lt', 'gt', 'lte', 'gte'], #notin
-            'param': ['exact'],
-            'param__id' : ['exact','ne', 'in'], #notin
-            'val': ['lt', 'gt', 'lte', 'gte'],
-            'valqc': ['exact', 'ne', 'in', 'lt', 'gt', 'lte', 'gte'] #notin
-        }
-
 class PlatformFilter(FilterSet):
     Field.register_lookup(NotEqual)
     #Field.register_lookup(NotIn)
