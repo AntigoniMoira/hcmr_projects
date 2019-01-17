@@ -45,7 +45,6 @@ from .filters import (
     ParameterFilter,
     FerryboxFilter,
     Cdf_InstitutionFilter,
-    DataFilter,
 )
 
 from .paginations import PlatformPagination
@@ -77,8 +76,9 @@ from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
+from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
-from drf_yasg.inspectors import FilterInspector
+from drf_yasg.inspectors import FilterInspector, SwaggerAutoSchema
 from rest_framework.renderers import JSONRenderer, TemplateHTMLRenderer
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
@@ -97,25 +97,31 @@ class ApiEndpoint(APIView):
         #return HttpResponse('Hello, OAuth2!')
         return JsonResponse({'data': 'Hello, OAuth2!'})
 
+class NoFilterAutoSchema(SwaggerAutoSchema):
+    filter_inspectors = []
+
+dts__gte = openapi.Parameter('dt__gte', openapi.IN_QUERY, description="Start datetime. Format:  'yyyy-mm-dd hh:mm:ss' e.g. 2016-04-08 13:30:00", type=openapi.TYPE_STRING)
+dte__lte = openapi.Parameter('dt__lte', openapi.IN_QUERY, description="End datetime. Format:  'yyyy-mm-dd hh:mm:ss' e.g. 2016-04-09 13:30:00", type=openapi.TYPE_STRING)
+params__icontains = openapi.Parameter('params__icontains', openapi.IN_QUERY, description="Parameter's name to filter platforms. e.g. PSAL", type=openapi.TYPE_STRING)
+type = openapi.Parameter('type', openapi.IN_QUERY, description="Platform's type. e.g. PF", type=openapi.TYPE_STRING)
+status = openapi.Parameter('status', openapi.IN_QUERY, description="Platform's status. e.g. true", type=openapi.TYPE_BOOLEAN)
+@method_decorator(name='get', decorator=swagger_auto_schema(manual_parameters= [dts__gte, dte__lte, params__icontains, type, status] ))
 class PlatformList(generics.ListCreateAPIView):
     """
     View to list all Platforms in the system.
 
     * Requires token authentication.
 
-    get:
-    Return a list of all the existing platforms.
-
-    post:
-    Create a new platform instance.
-    * Only admin users are able to access.
     """
+    
     authentication_classes = [OAuth2Authentication]
     permission_classes = [TokenMatchesOASRequirements]
     required_alternate_scopes = {
         "GET": [["user"]],
         "POST": [["user", "staff", "admin"]],
     }
+    swagger_schema = NoFilterAutoSchema
+    #permission_classes = [AllowAny]
     queryset = Platform.objects.all()
     serializer_class = PlatformSerializer
     filter_backends = (DjangoFilterBackend, OrderingFilter,)
@@ -173,6 +179,7 @@ class InstitutionList(generics.ListAPIView):
     View to list all Institutions in the system.
 
     * Requires token authentication.
+
     """
     authentication_classes = [OAuth2Authentication]
     permission_classes = [TokenHasScope]
@@ -225,12 +232,6 @@ class ParameterList(generics.ListAPIView):
 
     * Requires token authentication.
 
-    get:
-    Return a list of all the existing parameters.
-
-    post:
-    Create a new parameter instance.
-    * Only admin users are able to access.
     """
     authentication_classes = [OAuth2Authentication]
     permission_classes = [TokenMatchesOASRequirements]
@@ -271,8 +272,13 @@ class ParameterList(generics.ListAPIView):
                 'success': True
                 })
 
-@swagger_auto_schema(query_serializer=DataSerializer, manual_parameters=('dt',))
-#@method_decorator(name='list', decorator=swagger_auto_schema( filter_inspectors=[DjangoFilterDescriptionInspector] ))
+dt__gte = openapi.Parameter('dt__gte', openapi.IN_QUERY, description="Minimun datetime of measurement. Format:  'yyyy-mm-dd hh:mm:ss' e.g. 2016-04-08 13:30:00", type=openapi.TYPE_STRING)
+dt__lte = openapi.Parameter('dt__lte', openapi.IN_QUERY, description="Maximum datetime of measurement. Format:  'yyyy-mm-dd hh:mm:ss' e.g. 2016-04-09 13:30:00", type=openapi.TYPE_STRING)
+param__id__in = openapi.Parameter('param__id__in', openapi.IN_QUERY, description="List of parameters' ids to filter measurements. e.g. 26, 124", type=openapi.TYPE_STRING)
+param__pname__in = openapi.Parameter('param__pname__in', openapi.IN_QUERY, description="List of parameters' names to filter measurements. e.g. PSAL, VTM02", type=openapi.TYPE_STRING)
+pres__gte = openapi.Parameter('pres__gte', openapi.IN_QUERY, description="Minimum depth of measurement (Pressure). e.g. -3.0", type=openapi.TYPE_NUMBER)
+pres__lte = openapi.Parameter('pres__lte', openapi.IN_QUERY, description="Maximum depth of measurement (Pressure). e.g. 100.0", type=openapi.TYPE_NUMBER)
+@method_decorator(name='list', decorator=swagger_auto_schema( manual_parameters= [dt__gte, dt__lte, param__id__in, param__pname__in, pres__gte, pres__lte] ))
 class DataList(viewsets.ModelViewSet):
     """
     View to list all platform's data in the system.
@@ -286,24 +292,22 @@ class DataList(viewsets.ModelViewSet):
     Create new platform's data instance.
     * Only admin users are able to access.
     """
-    '''authentication_classes = [OAuth2Authentication]
+    authentication_classes = [OAuth2Authentication]
     permission_classes = [TokenMatchesOASRequirements]
     required_alternate_scopes = {
         "GET": [["user"]],
         "POST": [["user", "staff", "admin"]],
-    }'''
-    permission_classes = [AllowAny]
-    #manual_parameters = ['id', 'dt']
+    }
+    
     def get_queryset(self):
         platform = self.kwargs['platform']
         t = getModel()
         t._meta.db_table = 'data\".\"'+platform
         queryset = t.objects.all()
-        return queryset\
-
+        return queryset
+    
     serializer_class = DataSerializer
     filter_backends = (DjangoFilterBackend, OrderingFilter,)
-    #filter_class = DataFilter
     Field.register_lookup(NotEqual)
     filter_fields = {
             #available filters:'exact','ne', 'lt', 'gt', 'lte', 'gte', 'in', icontains
@@ -314,12 +318,13 @@ class DataList(viewsets.ModelViewSet):
             'posqc': ['exact', 'ne', 'in','lt', 'gt', 'lte', 'gte'], #notin
             'pres': ['lt', 'gt', 'lte', 'gte'],
             'presqc': ['exact', 'ne', 'in', 'lt', 'gt', 'lte', 'gte'], #notin
-            'param': ['exact'],
+            #'param': ['exact', 'in'],
+            'param__pname': ['exact', 'in'],
             'param__id' : ['exact','ne', 'in'], #notin
             'val': ['lt', 'gt', 'lte', 'gte'],
             'valqc': ['exact', 'ne', 'in', 'lt', 'gt', 'lte', 'gte'] #notin
     }
-    ordering_fields = ['id']
+    ordering_fields = ['id', 'pres']
 
     @swagger_auto_schema(method='post', auto_schema=None)
     @api_view(['POST'])
@@ -464,6 +469,7 @@ class DeepObservDataList(generics.ListAPIView):
     get:
     Return a list of all the deep observer's data.
     """
+    swagger_schema = None
     authentication_classes = [OAuth2Authentication]
     permission_classes = [TokenHasScope]
     required_scopes = ['user']
@@ -512,6 +518,7 @@ class FerryboxDataList(generics.ListAPIView):
     get:
     Return a list of all the ferrybox data.
     """
+    swagger_schema = None
     authentication_classes = [OAuth2Authentication]
     permission_classes = [TokenHasScope]
     required_scopes = ['user']
@@ -569,6 +576,7 @@ def poseidon_platform_parameters_with_measurements_between(request):
     return JsonResponse({ "data" : results[0][0]})
 
 class Poseidon_db_List(generics.ListAPIView):
+    swagger_schema = None
     #Only staff users allowed
     #permission_classes = (UserPermission, )
 
