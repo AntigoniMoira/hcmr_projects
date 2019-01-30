@@ -28,7 +28,7 @@ schema_view = get_schema_view(
     openapi.Info(
         title="HCMR API",
         default_version='v1',
-        description="Test description",
+        description="The HCMR API lets you access the data of our database. The data sources come from observational platforms.",
     ),
     #validators=['flex', 'ssv'],
     public=True,

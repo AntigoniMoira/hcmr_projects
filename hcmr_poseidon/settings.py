@@ -20,7 +20,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # See https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-#Place secret key here: 
+#Place secret key here:
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
@@ -113,6 +113,7 @@ WSGI_APPLICATION = 'hcmr_poseidon.wsgi.application'
 
 #Place DATABASES ={...} here:
 
+
 # Password validation
 # https://docs.djangoproject.com/en/1.11/ref/settings/#auth-password-validators
 
@@ -141,7 +142,7 @@ SWAGGER_SETTINGS = {
     'SECURITY_DEFINITIONS': {
         'Your App API - Swagger': {
             'type': 'oauth2',
-            #'authorizationUrl': "http://localhost:8000/o/authorize",
+            'authorizationUrl': "http://localhost:8000/o/authorize",
             'tokenUrl': "http://localhost:8000/o/token/",
             'flow': 'application',
             'scopes': {
@@ -152,7 +153,7 @@ SWAGGER_SETTINGS = {
             }
         }
     },
-    #'DEFAULT_FILTER_INSPECTORS': [],
+    'DEFAULT_FILTER_INSPECTORS': [],
     'OAUTH2_CONFIG': {
         'clientId': 'yourAppClientId',
         'clientSecret': 'yourAppClientSecret',
