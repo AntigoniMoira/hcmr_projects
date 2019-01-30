@@ -97,15 +97,18 @@ class ApiEndpoint(APIView):
         #return HttpResponse('Hello, OAuth2!')
         return JsonResponse({'data': 'Hello, OAuth2!'})
 
-class NoFilterAutoSchema(SwaggerAutoSchema):
-    filter_inspectors = []
+'''class NoFilterAutoSchema(SwaggerAutoSchema):
+    filter_inspectors = []'''
 
 dts__gte = openapi.Parameter('dt__gte', openapi.IN_QUERY, description="Start datetime. Format:  'yyyy-mm-dd hh:mm:ss' e.g. 2016-04-08 13:30:00", type=openapi.TYPE_STRING)
 dte__lte = openapi.Parameter('dt__lte', openapi.IN_QUERY, description="End datetime. Format:  'yyyy-mm-dd hh:mm:ss' e.g. 2016-04-09 13:30:00", type=openapi.TYPE_STRING)
 params__icontains = openapi.Parameter('params__icontains', openapi.IN_QUERY, description="Parameter's name to filter platforms. e.g. PSAL", type=openapi.TYPE_STRING)
 type = openapi.Parameter('type', openapi.IN_QUERY, description="Platform's type. e.g. PF", type=openapi.TYPE_STRING)
 status = openapi.Parameter('status', openapi.IN_QUERY, description="Platform's status. e.g. true", type=openapi.TYPE_BOOLEAN)
-@method_decorator(name='get', decorator=swagger_auto_schema(manual_parameters= [dts__gte, dte__lte, params__icontains, type, status] ))
+inst__id = openapi.Parameter('inst__id', openapi.IN_QUERY, description="The institution's id of platform. e.g. 35", type=openapi.TYPE_NUMBER)
+inst__id__in = openapi.Parameter('inst__id__in', openapi.IN_QUERY, description="List of institution's ids. e.g. 35, 40", type=openapi.TYPE_STRING)
+ordering = openapi.Parameter('ordering', openapi.IN_QUERY, description="Which field to use when ordering the results. e.g. id (ascending), -id (descending)", type=openapi.TYPE_STRING)
+@method_decorator(name='get', decorator=swagger_auto_schema(manual_parameters= [ordering, dts__gte, dte__lte, params__icontains, type, status, inst__id, inst__id__in] ))
 class PlatformList(generics.ListCreateAPIView):
     """
     View to list all Platforms in the system.
@@ -120,7 +123,7 @@ class PlatformList(generics.ListCreateAPIView):
         "GET": [["user"]],
         "POST": [["user", "staff", "admin"]],
     }
-    swagger_schema = NoFilterAutoSchema
+    #swagger_schema = NoFilterAutoSchema
     #permission_classes = [AllowAny]
     queryset = Platform.objects.all()
     serializer_class = PlatformSerializer
@@ -174,6 +177,14 @@ class PlatformList(generics.ListCreateAPIView):
                 'success': True
                 })
 
+name_native__icontains = openapi.Parameter('name_native__icontains', openapi.IN_QUERY, description="Filter to get institutions with name matching this value.", type=openapi.TYPE_STRING)
+abrv = openapi.Parameter('abrv', openapi.IN_QUERY, description="Describes the full name of the institution. e.g. HCMR", type=openapi.TYPE_STRING)
+abrv__in = openapi.Parameter('abrv__in', openapi.IN_QUERY, description="List of abbreviations to filter institutions. e.g. HCMR, CMRE", type=openapi.TYPE_STRING)
+abrv__icontains = openapi.Parameter('abrv__icontains', openapi.IN_QUERY, description="Filter to get institutions with abbreviation matching this value.", type=openapi.TYPE_STRING)
+country = openapi.Parameter('country', openapi.IN_QUERY, description="The country of institution. e.g. Greece", type=openapi.TYPE_STRING)
+country__in = openapi.Parameter('country__in', openapi.IN_QUERY, description="List of countries. e.g. Greece, Spain", type=openapi.TYPE_STRING)
+ordering = openapi.Parameter('ordering', openapi.IN_QUERY, description="Which field to use when ordering the results. e.g. id (ascending), -id (descending)", type=openapi.TYPE_STRING)
+@method_decorator(name='get', decorator=swagger_auto_schema(manual_parameters= [ordering, name_native__icontains, abrv, abrv__in, abrv__icontains, country, country__in] ))
 class InstitutionList(generics.ListAPIView):
     """
     View to list all Institutions in the system.
@@ -184,6 +195,7 @@ class InstitutionList(generics.ListAPIView):
     authentication_classes = [OAuth2Authentication]
     permission_classes = [TokenHasScope]
     required_scopes = ['user']
+    #swagger_schema = NoFilterAutoSchema
     queryset = Institution.objects.all()
     serializer_class = InstitutionSerializer
     filter_backends = (DjangoFilterBackend, OrderingFilter,)
@@ -226,6 +238,21 @@ class Cdf_InstitutionList(generics.ListCreateAPIView):
             new_cdf_inst.save()
             return Response({ "success" : True, "id" : new_cdf_inst.id})
 
+id = openapi.Parameter('id', openapi.IN_QUERY, description="Parameter's id e.g. 1", type=openapi.TYPE_NUMBER)
+id__in= openapi.Parameter('id__in', openapi.IN_QUERY, description="List of ids e.g 1,2", type=openapi.TYPE_STRING)
+category_long = openapi.Parameter('category_long', openapi.IN_QUERY, description="Category to filter parameters. Available: Atmospheric, Sea Temperature, Salinity/Conductivity, Currents, Waves, Sea Level/Pressure, Optical, Biochemical, Other", type=openapi.TYPE_STRING)
+category_short = openapi.Parameter('category_short', openapi.IN_QUERY, description="Category's short name to filter parameters. Available: A, T, S, C, W, L, H, B, O", type=openapi.TYPE_STRING)
+category_short__ne = openapi.Parameter('category_short__ne', openapi.IN_QUERY, description="Category's short name not equal to this value. e.g. A", type=openapi.TYPE_STRING)
+category_short__in = openapi.Parameter('category_short__in', openapi.IN_QUERY, description="Category's short name list to filter parameters. e.g. A, T", type=openapi.TYPE_STRING)
+stand_name__icontains = openapi.Parameter('stand_name__icontains', openapi.IN_QUERY, description="Filter to get parameters with stand_name matching this value.", type=openapi.TYPE_STRING)
+unit= openapi.Parameter('unit', openapi.IN_QUERY, description="Parameter unit e.g. m3 s-1", type=openapi.TYPE_STRING)
+unit__in= openapi.Parameter('unit__in', openapi.IN_QUERY, description="List of units e.g m3 s-1,%", type=openapi.TYPE_STRING)
+pname= openapi.Parameter('pname', openapi.IN_QUERY, description="Parameter's name e.g. ATMS", type=openapi.TYPE_STRING)
+pname__ne= openapi.Parameter('pname__ne', openapi.IN_QUERY, description="Parameter's name not equal to this value. e.g. ATMS", type=openapi.TYPE_STRING)
+pname__in= openapi.Parameter('pname__in', openapi.IN_QUERY, description="List of names e.g ATMS, CPHL", type=openapi.TYPE_STRING)
+long_name__icontains = openapi.Parameter('long_name__icontains', openapi.IN_QUERY, description="Filter to get parameters with long_name matching this value.", type=openapi.TYPE_STRING)
+ordering = openapi.Parameter('ordering', openapi.IN_QUERY, description="Which field to use when ordering the results. e.g. id (ascending), -id (descending)", type=openapi.TYPE_STRING)
+@method_decorator(name='get', decorator=swagger_auto_schema(manual_parameters= [ordering, id, id__in, category_long, category_short, category_short__ne, category_short__in, stand_name__icontains, unit, unit__in, pname, pname__ne, pname__in, long_name__icontains] ))
 class ParameterList(generics.ListAPIView):
     """
     View to list all Parameters in the system.
@@ -240,6 +267,7 @@ class ParameterList(generics.ListAPIView):
         "POST": [["user", "staff", "admin"]],
     }
     queryset = Parameter.objects.all()
+    #swagger_schema = NoFilterAutoSchema
     serializer_class = ParameterSerializer
     filter_backends = (DjangoFilterBackend, OrderingFilter,)
     filter_class = ParameterFilter
@@ -278,7 +306,8 @@ param__id__in = openapi.Parameter('param__id__in', openapi.IN_QUERY, description
 param__pname__in = openapi.Parameter('param__pname__in', openapi.IN_QUERY, description="List of parameters' names to filter measurements. e.g. PSAL, VTM02", type=openapi.TYPE_STRING)
 pres__gte = openapi.Parameter('pres__gte', openapi.IN_QUERY, description="Minimum depth of measurement (Pressure). e.g. -3.0", type=openapi.TYPE_NUMBER)
 pres__lte = openapi.Parameter('pres__lte', openapi.IN_QUERY, description="Maximum depth of measurement (Pressure). e.g. 100.0", type=openapi.TYPE_NUMBER)
-@method_decorator(name='list', decorator=swagger_auto_schema( manual_parameters= [dt__gte, dt__lte, param__id__in, param__pname__in, pres__gte, pres__lte] ))
+ordering = openapi.Parameter('ordering', openapi.IN_QUERY, description="Which field to use when ordering the results. Available: id (ascending), -id (descending), pres (ascending), -pres (descending)", type=openapi.TYPE_STRING)
+@method_decorator(name='list', decorator=swagger_auto_schema( manual_parameters= [ordering, dt__gte, dt__lte, param__id__in, param__pname__in, pres__gte, pres__lte] ))
 class DataList(viewsets.ModelViewSet):
     """
     View to list all platform's data in the system.
