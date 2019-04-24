@@ -3,7 +3,7 @@ import re
 from datetime import datetime
 from decimal import Decimal
 
-#from django
+# from django
 from django.shortcuts import render, redirect
 from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 from django.db.models import Q
@@ -13,7 +13,7 @@ from django.contrib.auth import get_user_model, authenticate, login, logout, get
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_protect, csrf_exempt
 
-#from my files
+# from my files
 from .serializers import (
     PlatformSerializer,
     DataSerializer,
@@ -51,7 +51,7 @@ from .paginations import PlatformPagination
 from .lookups import NotEqual
 from .custom_permissions import UserPermission
 
-#from rest_framework
+# from rest_framework
 from rest_framework import generics, renderers, viewsets
 from rest_framework.filters import OrderingFilter
 from django_filters.rest_framework import DjangoFilterBackend, FilterSet
@@ -83,7 +83,9 @@ from rest_framework.renderers import JSONRenderer, TemplateHTMLRenderer
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 
-#class ApiEndpoint(ProtectedResourceView):
+# class ApiEndpoint(ProtectedResourceView):
+
+
 class ApiEndpoint(APIView):
     swagger_schema = None
     #permission_classes = [UserPermission]
@@ -92,23 +94,41 @@ class ApiEndpoint(APIView):
     permission_classes = [TokenHasScope]
     #permission_classes =[AllowAny]
     required_scopes = ['user']
+
     def get(self, request, *args, **kwargs):
-        #print(request.user.is_staff)
-        #return HttpResponse('Hello, OAuth2!')
+        # print(request.user.is_staff)
+        # return HttpResponse('Hello, OAuth2!')
         return JsonResponse({'data': 'Hello, OAuth2!'})
+
 
 '''class NoFilterAutoSchema(SwaggerAutoSchema):
     filter_inspectors = []'''
 
-dts__gte = openapi.Parameter('dt__gte', openapi.IN_QUERY, description="Start datetime. Format:  'yyyy-mm-dd hh:mm:ss' e.g. 2016-04-08 13:30:00", type=openapi.TYPE_STRING)
-dte__lte = openapi.Parameter('dt__lte', openapi.IN_QUERY, description="End datetime. Format:  'yyyy-mm-dd hh:mm:ss' e.g. 2016-04-09 13:30:00", type=openapi.TYPE_STRING)
-params__icontains = openapi.Parameter('params__icontains', openapi.IN_QUERY, description="Parameter's name to filter platforms. e.g. PSAL", type=openapi.TYPE_STRING)
-type = openapi.Parameter('type', openapi.IN_QUERY, description="Platform's type. e.g. PF", type=openapi.TYPE_STRING)
-status = openapi.Parameter('status', openapi.IN_QUERY, description="Platform's status. e.g. true", type=openapi.TYPE_BOOLEAN)
-inst__id = openapi.Parameter('inst__id', openapi.IN_QUERY, description="The institution's id of platform. e.g. 35", type=openapi.TYPE_NUMBER)
-inst__id__in = openapi.Parameter('inst__id__in', openapi.IN_QUERY, description="List of institution's ids. e.g. 35, 40", type=openapi.TYPE_STRING)
-ordering = openapi.Parameter('ordering', openapi.IN_QUERY, description="Which field to use when ordering the results. e.g. id (ascending), -id (descending)", type=openapi.TYPE_STRING)
-@method_decorator(name='get', decorator=swagger_auto_schema(manual_parameters= [ordering, dts__gte, dte__lte, params__icontains, type, status, inst__id, inst__id__in] ))
+pid = openapi.Parameter('pid', openapi.IN_QUERY,
+                             description="Platform's name. e.g. FAWQ", type=openapi.TYPE_STRING)
+pid__in = openapi.Parameter('pid__in', openapi.IN_QUERY,
+                                 description="List of platform's names. e.g. FAWQ, 6101542", type=openapi.TYPE_STRING)
+tspr = openapi.Parameter('tspr', openapi.IN_QUERY,
+                             description="TS for TimeSeries or PR for Profile.", type=openapi.TYPE_STRING)
+dts__gte = openapi.Parameter('dt__gte', openapi.IN_QUERY,
+                             description="Start datetime. Format:  'yyyy-mm-dd hh:mm:ss' e.g. 2016-04-08 13:30:00", type=openapi.TYPE_STRING)
+dte__lte = openapi.Parameter('dt__lte', openapi.IN_QUERY,
+                             description="End datetime. Format:  'yyyy-mm-dd hh:mm:ss' e.g. 2016-04-09 13:30:00", type=openapi.TYPE_STRING)
+params__icontains = openapi.Parameter('params__icontains', openapi.IN_QUERY,
+                                      description="Parameter's name to filter platforms. e.g. PSAL Search for one parameter. Multiple parameters search not yet implemented.", type=openapi.TYPE_STRING)
+type = openapi.Parameter('type', openapi.IN_QUERY,
+                         description="Platform's type. e.g. PF", type=openapi.TYPE_STRING)
+status = openapi.Parameter('status', openapi.IN_QUERY,
+                           description="Platform's status. e.g. true", type=openapi.TYPE_BOOLEAN)
+inst__id = openapi.Parameter('inst__id', openapi.IN_QUERY,
+                             description="The institution's id of platform. e.g. 35", type=openapi.TYPE_NUMBER)
+inst__id__in = openapi.Parameter('inst__id__in', openapi.IN_QUERY,
+                                 description="List of institution's ids. e.g. 35, 40", type=openapi.TYPE_STRING)
+ordering = openapi.Parameter('ordering', openapi.IN_QUERY,
+                             description="Which field to use when ordering the results. e.g. id (ascending), -id (descending)", type=openapi.TYPE_STRING)
+
+
+@method_decorator(name='get', decorator=swagger_auto_schema(manual_parameters=[ordering, pid, pid__in, tspr, dts__gte, dte__lte, params__icontains, type, status, inst__id, inst__id__in]))
 class PlatformList(generics.ListCreateAPIView):
     """
     View to list all Platforms in the system.
@@ -116,7 +136,7 @@ class PlatformList(generics.ListCreateAPIView):
     * Requires token authentication.
 
     """
-    
+
     authentication_classes = [OAuth2Authentication]
     permission_classes = [TokenMatchesOASRequirements]
     required_alternate_scopes = {
@@ -133,7 +153,7 @@ class PlatformList(generics.ListCreateAPIView):
 
     @swagger_auto_schema(method='post', auto_schema=None)
     @api_view(['POST'])
-    def post (self, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         body_unicode = request.body.decode('utf-8')
         prejson = json.loads(body_unicode)
         datalist = prejson['data']
@@ -142,49 +162,59 @@ class PlatformList(generics.ListCreateAPIView):
                 for i in range(len(datalist)):
                     inst = Institution.objects.get(id=datalist[i]['inst'])
                     obj, created = Platform.objects.update_or_create(
-                                        pid = datalist[i]['pid'],
-                                        tspr = datalist[i]['tspr'],
-                                        type = datalist[i]['type'],
-                                        defaults={
-                                                'pid' : datalist[i]['pid'],
-                                                'tspr' : datalist[i]['tspr'],
-                                                'type' : datalist[i]['type'],
-                                                'dts' : datalist[i]['dts'],
-                                                'dte' : datalist[i]['dte'],
-                                                'lat' : datalist[i]['lat'],
-                                                'lon' : datalist[i]['lon'],
-                                                'status' : datalist[i]['status'],
-                                                'params' : datalist[i]['params'],
-                                                'platform_code' : datalist[i]['platform_code'],
-                                                'wmo' : datalist[i]['wmo'],
-                                                'pi_name' : datalist[i]['pi_name'],
-                                                'author' : datalist[i]['author'],
-                                                'contact' : datalist[i]['contact'],
-                                                'island' : datalist[i]['island'],
-                                                'pl_name' : datalist[i]['pl_name'],
-                                                'inst_ref' : datalist[i]['inst_ref'],
-                                                'assembly_center' : datalist[i]['assembly_center'],
-                                                'site_code' : datalist[i]['site_code'],
-                                                'source' : datalist[i]['source'],
-                                                'cdf_inst' : datalist[i]['cdf_inst'],
-                                                'inst' : inst},
-                                    )
+                        pid=datalist[i]['pid'],
+                        tspr=datalist[i]['tspr'],
+                        type=datalist[i]['type'],
+                        defaults={
+                            'pid': datalist[i]['pid'],
+                            'tspr': datalist[i]['tspr'],
+                            'type': datalist[i]['type'],
+                            'dts': datalist[i]['dts'],
+                            'dte': datalist[i]['dte'],
+                            'lat': datalist[i]['lat'],
+                            'lon': datalist[i]['lon'],
+                            'status': datalist[i]['status'],
+                            'params': datalist[i]['params'],
+                            'platform_code': datalist[i]['platform_code'],
+                            'wmo': datalist[i]['wmo'],
+                            'pi_name': datalist[i]['pi_name'],
+                            'author': datalist[i]['author'],
+                            'contact': datalist[i]['contact'],
+                            'island': datalist[i]['island'],
+                            'pl_name': datalist[i]['pl_name'],
+                            'inst_ref': datalist[i]['inst_ref'],
+                            'assembly_center': datalist[i]['assembly_center'],
+                            'site_code': datalist[i]['site_code'],
+                            'source': datalist[i]['source'],
+                            'cdf_inst': datalist[i]['cdf_inst'],
+                            'inst': inst},
+                    )
         except Exception:
             return Response({
                 'success': False
-                })
+            })
         return Response({
-                'success': True
-                })
+            'success': True
+        })
 
-name_native__icontains = openapi.Parameter('name_native__icontains', openapi.IN_QUERY, description="Filter to get institutions with name matching this value.", type=openapi.TYPE_STRING)
-abrv = openapi.Parameter('abrv', openapi.IN_QUERY, description="Describes the full name of the institution. e.g. HCMR", type=openapi.TYPE_STRING)
-abrv__in = openapi.Parameter('abrv__in', openapi.IN_QUERY, description="List of abbreviations to filter institutions. e.g. HCMR, CMRE", type=openapi.TYPE_STRING)
-abrv__icontains = openapi.Parameter('abrv__icontains', openapi.IN_QUERY, description="Filter to get institutions with abbreviation matching this value.", type=openapi.TYPE_STRING)
-country = openapi.Parameter('country', openapi.IN_QUERY, description="The country of institution. e.g. Greece", type=openapi.TYPE_STRING)
-country__in = openapi.Parameter('country__in', openapi.IN_QUERY, description="List of countries. e.g. Greece, Spain", type=openapi.TYPE_STRING)
-ordering = openapi.Parameter('ordering', openapi.IN_QUERY, description="Which field to use when ordering the results. e.g. id (ascending), -id (descending)", type=openapi.TYPE_STRING)
-@method_decorator(name='get', decorator=swagger_auto_schema(manual_parameters= [ordering, name_native__icontains, abrv, abrv__in, abrv__icontains, country, country__in] ))
+
+name_native__icontains = openapi.Parameter('name_native__icontains', openapi.IN_QUERY,
+                                           description="Filter to get institutions with name matching this value.", type=openapi.TYPE_STRING)
+abrv = openapi.Parameter('abrv', openapi.IN_QUERY,
+                         description="Describes the full name of the institution. e.g. HCMR", type=openapi.TYPE_STRING)
+abrv__in = openapi.Parameter('abrv__in', openapi.IN_QUERY,
+                             description="List of abbreviations to filter institutions. e.g. HCMR, CMRE", type=openapi.TYPE_STRING)
+abrv__icontains = openapi.Parameter('abrv__icontains', openapi.IN_QUERY,
+                                    description="Filter to get institutions with abbreviation matching this value.", type=openapi.TYPE_STRING)
+country = openapi.Parameter('country', openapi.IN_QUERY,
+                            description="The country of institution. e.g. Greece", type=openapi.TYPE_STRING)
+country__in = openapi.Parameter('country__in', openapi.IN_QUERY,
+                                description="List of countries. e.g. Greece, Spain", type=openapi.TYPE_STRING)
+ordering = openapi.Parameter('ordering', openapi.IN_QUERY,
+                             description="Which field to use when ordering the results. e.g. id (ascending), -id (descending)", type=openapi.TYPE_STRING)
+
+
+@method_decorator(name='get', decorator=swagger_auto_schema(manual_parameters=[ordering, name_native__icontains, abrv, abrv__in, abrv__icontains, country, country__in]))
 class InstitutionList(generics.ListAPIView):
     """
     View to list all Institutions in the system.
@@ -201,6 +231,7 @@ class InstitutionList(generics.ListAPIView):
     filter_backends = (DjangoFilterBackend, OrderingFilter,)
     filter_class = InstitutionFilter
     ordering_fields = ['id']
+
 
 class Cdf_InstitutionList(generics.ListCreateAPIView):
     swagger_schema = None
@@ -227,32 +258,50 @@ class Cdf_InstitutionList(generics.ListCreateAPIView):
 
     @swagger_auto_schema(method='post', auto_schema=None)
     @api_view(['POST'])
-    def post (self, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         name = request.POST.get('name', None)
         inst = Cdf_Institution.objects.filter(name=name)
         if inst.exists():
-            return Response({ "success" : False})
+            return Response({"success": False})
         else:
             institution = Institution.objects.get(id=66)
-            new_cdf_inst = Cdf_Institution.objects.create(name=name, inst_id=institution)
+            new_cdf_inst = Cdf_Institution.objects.create(
+                name=name, inst_id=institution)
             new_cdf_inst.save()
-            return Response({ "success" : True, "id" : new_cdf_inst.id})
+            return Response({"success": True, "id": new_cdf_inst.id})
 
-id = openapi.Parameter('id', openapi.IN_QUERY, description="Parameter's id e.g. 1", type=openapi.TYPE_NUMBER)
-id__in= openapi.Parameter('id__in', openapi.IN_QUERY, description="List of ids e.g 1,2", type=openapi.TYPE_STRING)
-category_long = openapi.Parameter('category_long', openapi.IN_QUERY, description="Category to filter parameters. Available: Atmospheric, Sea Temperature, Salinity/Conductivity, Currents, Waves, Sea Level/Pressure, Optical, Biochemical, Other", type=openapi.TYPE_STRING)
-category_short = openapi.Parameter('category_short', openapi.IN_QUERY, description="Category's short name to filter parameters. Available: A, T, S, C, W, L, H, B, O", type=openapi.TYPE_STRING)
-category_short__ne = openapi.Parameter('category_short__ne', openapi.IN_QUERY, description="Category's short name not equal to this value. e.g. A", type=openapi.TYPE_STRING)
-category_short__in = openapi.Parameter('category_short__in', openapi.IN_QUERY, description="Category's short name list to filter parameters. e.g. A, T", type=openapi.TYPE_STRING)
-stand_name__icontains = openapi.Parameter('stand_name__icontains', openapi.IN_QUERY, description="Filter to get parameters with stand_name matching this value.", type=openapi.TYPE_STRING)
-unit= openapi.Parameter('unit', openapi.IN_QUERY, description="Parameter unit e.g. m3 s-1", type=openapi.TYPE_STRING)
-unit__in= openapi.Parameter('unit__in', openapi.IN_QUERY, description="List of units e.g m3 s-1,%", type=openapi.TYPE_STRING)
-pname= openapi.Parameter('pname', openapi.IN_QUERY, description="Parameter's name e.g. ATMS", type=openapi.TYPE_STRING)
-pname__ne= openapi.Parameter('pname__ne', openapi.IN_QUERY, description="Parameter's name not equal to this value. e.g. ATMS", type=openapi.TYPE_STRING)
-pname__in= openapi.Parameter('pname__in', openapi.IN_QUERY, description="List of names e.g ATMS, CPHL", type=openapi.TYPE_STRING)
-long_name__icontains = openapi.Parameter('long_name__icontains', openapi.IN_QUERY, description="Filter to get parameters with long_name matching this value.", type=openapi.TYPE_STRING)
-ordering = openapi.Parameter('ordering', openapi.IN_QUERY, description="Which field to use when ordering the results. e.g. id (ascending), -id (descending)", type=openapi.TYPE_STRING)
-@method_decorator(name='get', decorator=swagger_auto_schema(manual_parameters= [ordering, id, id__in, category_long, category_short, category_short__ne, category_short__in, stand_name__icontains, unit, unit__in, pname, pname__ne, pname__in, long_name__icontains] ))
+
+id = openapi.Parameter('id', openapi.IN_QUERY,
+                       description="Parameter's id e.g. 1", type=openapi.TYPE_NUMBER)
+id__in = openapi.Parameter('id__in', openapi.IN_QUERY,
+                           description="List of ids e.g 1,2", type=openapi.TYPE_STRING)
+category_long = openapi.Parameter('category_long', openapi.IN_QUERY,
+                                  description="Category to filter parameters. Available: Atmospheric, Sea Temperature, Salinity/Conductivity, Currents, Waves, Sea Level/Pressure, Optical, Biochemical, Other", type=openapi.TYPE_STRING)
+category_short = openapi.Parameter('category_short', openapi.IN_QUERY,
+                                   description="Category's short name to filter parameters. Available: A, T, S, C, W, L, H, B, O", type=openapi.TYPE_STRING)
+category_short__ne = openapi.Parameter('category_short__ne', openapi.IN_QUERY,
+                                       description="Category's short name not equal to this value. e.g. A", type=openapi.TYPE_STRING)
+category_short__in = openapi.Parameter('category_short__in', openapi.IN_QUERY,
+                                       description="Category's short name list to filter parameters. e.g. A, T", type=openapi.TYPE_STRING)
+stand_name__icontains = openapi.Parameter('stand_name__icontains', openapi.IN_QUERY,
+                                          description="Filter to get parameters with stand_name matching this value.", type=openapi.TYPE_STRING)
+unit = openapi.Parameter('unit', openapi.IN_QUERY,
+                         description="Parameter unit e.g. m3 s-1", type=openapi.TYPE_STRING)
+unit__in = openapi.Parameter('unit__in', openapi.IN_QUERY,
+                             description="List of units e.g m3 s-1,%", type=openapi.TYPE_STRING)
+pname = openapi.Parameter('pname', openapi.IN_QUERY,
+                          description="Parameter's name e.g. ATMS", type=openapi.TYPE_STRING)
+pname__ne = openapi.Parameter('pname__ne', openapi.IN_QUERY,
+                              description="Parameter's name not equal to this value. e.g. ATMS", type=openapi.TYPE_STRING)
+pname__in = openapi.Parameter('pname__in', openapi.IN_QUERY,
+                              description="List of names e.g ATMS, CPHL", type=openapi.TYPE_STRING)
+long_name__icontains = openapi.Parameter('long_name__icontains', openapi.IN_QUERY,
+                                         description="Filter to get parameters with long_name matching this value.", type=openapi.TYPE_STRING)
+ordering = openapi.Parameter('ordering', openapi.IN_QUERY,
+                             description="Which field to use when ordering the results. e.g. id (ascending), -id (descending)", type=openapi.TYPE_STRING)
+
+
+@method_decorator(name='get', decorator=swagger_auto_schema(manual_parameters=[ordering, id, id__in, category_long, category_short, category_short__ne, category_short__in, stand_name__icontains, unit, unit__in, pname, pname__ne, pname__in, long_name__icontains]))
 class ParameterList(generics.ListAPIView):
     """
     View to list all Parameters in the system.
@@ -275,7 +324,7 @@ class ParameterList(generics.ListAPIView):
 
     @swagger_auto_schema(method='post', auto_schema=None)
     @api_view(['POST'])
-    def post (self, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         body_unicode = request.body.decode('utf-8')
         prejson = json.loads(body_unicode)
         metalist = prejson['meta']
@@ -283,31 +332,41 @@ class ParameterList(generics.ListAPIView):
             with transaction.atomic():
                 for i in range(len(metalist)):
                     obj, created = Parameter.objects.get_or_create(
-                                        pname = metalist[i]['pname'],
-                                        defaults={
-                                                'pname' : metalist[i]['pname'],
-                                                'unit' : metalist[i]['init'],
-                                                'stand_name' : metalist[i]['stand_name'],
-                                                'long_name' : metalist[i]['long_name'],
-                                                'fval' : metalist[i]['fval'],
-                                                'fval_qc' : metalist[i]['fval_qc'],},
-                                    )
+                        pname=metalist[i]['pname'],
+                        defaults={
+                            'pname': metalist[i]['pname'],
+                            'unit': metalist[i]['init'],
+                            'stand_name': metalist[i]['stand_name'],
+                            'long_name': metalist[i]['long_name'],
+                            'fval': metalist[i]['fval'],
+                            'fval_qc': metalist[i]['fval_qc'], },
+                    )
         except Exception:
             return Response({
                 'success': False
-                })
+            })
         return Response({
-                'success': True
-                })
+            'success': True
+        })
 
-dt__gte = openapi.Parameter('dt__gte', openapi.IN_QUERY, description="Minimun datetime of measurement. Format:  'yyyy-mm-dd hh:mm:ss' e.g. 2016-04-08 13:30:00", type=openapi.TYPE_STRING)
-dt__lte = openapi.Parameter('dt__lte', openapi.IN_QUERY, description="Maximum datetime of measurement. Format:  'yyyy-mm-dd hh:mm:ss' e.g. 2016-04-09 13:30:00", type=openapi.TYPE_STRING)
-param__id__in = openapi.Parameter('param__id__in', openapi.IN_QUERY, description="List of parameters' ids to filter measurements. e.g. 26, 124", type=openapi.TYPE_STRING)
-param__pname__in = openapi.Parameter('param__pname__in', openapi.IN_QUERY, description="List of parameters' names to filter measurements. e.g. PSAL, VTM02", type=openapi.TYPE_STRING)
-pres__gte = openapi.Parameter('pres__gte', openapi.IN_QUERY, description="Minimum depth of measurement (Pressure). e.g. -3.0", type=openapi.TYPE_NUMBER)
-pres__lte = openapi.Parameter('pres__lte', openapi.IN_QUERY, description="Maximum depth of measurement (Pressure). e.g. 100.0", type=openapi.TYPE_NUMBER)
-ordering = openapi.Parameter('ordering', openapi.IN_QUERY, description="Which field to use when ordering the results. Available: id (ascending), -id (descending), pres (ascending), -pres (descending)", type=openapi.TYPE_STRING)
-@method_decorator(name='list', decorator=swagger_auto_schema( manual_parameters= [ordering, dt__gte, dt__lte, param__id__in, param__pname__in, pres__gte, pres__lte] ))
+
+dt__gte = openapi.Parameter('dt__gte', openapi.IN_QUERY,
+                            description="Minimun datetime of measurement. Format:  'yyyy-mm-dd hh:mm:ss' e.g. 2016-04-08 13:30:00", type=openapi.TYPE_STRING)
+dt__lte = openapi.Parameter('dt__lte', openapi.IN_QUERY,
+                            description="Maximum datetime of measurement. Format:  'yyyy-mm-dd hh:mm:ss' e.g. 2016-04-09 13:30:00", type=openapi.TYPE_STRING)
+param__id__in = openapi.Parameter('param__id__in', openapi.IN_QUERY,
+                                  description="List of parameters' ids to filter measurements. e.g. 26, 124", type=openapi.TYPE_STRING)
+param__pname__in = openapi.Parameter('param__pname__in', openapi.IN_QUERY,
+                                     description="List of parameters' names to filter measurements. e.g. PSAL, VTM02", type=openapi.TYPE_STRING)
+pres__gte = openapi.Parameter('pres__gte', openapi.IN_QUERY,
+                              description="Minimum depth of measurement (Pressure). e.g. -3.0", type=openapi.TYPE_NUMBER)
+pres__lte = openapi.Parameter('pres__lte', openapi.IN_QUERY,
+                              description="Maximum depth of measurement (Pressure). e.g. 100.0", type=openapi.TYPE_NUMBER)
+ordering = openapi.Parameter('ordering', openapi.IN_QUERY,
+                             description="Which field to use when ordering the results. Available: id (ascending), -id (descending), pres (ascending), -pres (descending)", type=openapi.TYPE_STRING)
+
+
+@method_decorator(name='list', decorator=swagger_auto_schema(manual_parameters=[ordering, dt__gte, dt__lte, param__id__in, param__pname__in, pres__gte, pres__lte]))
 class DataList(viewsets.ModelViewSet):
     """
     View to list all platform's data in the system.
@@ -327,38 +386,38 @@ class DataList(viewsets.ModelViewSet):
         "GET": [["user"]],
         "POST": [["user", "staff", "admin"]],
     }
-    
+
     def get_queryset(self):
         platform = self.kwargs['platform']
         t = getModel()
         t._meta.db_table = 'data\".\"'+platform
         queryset = t.objects.all()
         return queryset
-    
+
     serializer_class = DataSerializer
     filter_backends = (DjangoFilterBackend, OrderingFilter,)
     Field.register_lookup(NotEqual)
     filter_fields = {
-            #available filters:'exact','ne', 'lt', 'gt', 'lte', 'gte', 'in', icontains
-            'id': ['exact', 'ne', 'in', 'lte'], #notin
-            'dt': ['lt', 'gt', 'lte', 'gte', 'icontains'],
-            'lat': ['lt', 'gt', 'lte', 'gte'],
-            'lon': ['lt', 'gt', 'lte', 'gte'],
-            'posqc': ['exact', 'ne', 'in','lt', 'gt', 'lte', 'gte'], #notin
-            'pres': ['lt', 'gt', 'lte', 'gte'],
-            'presqc': ['exact', 'ne', 'in', 'lt', 'gt', 'lte', 'gte'], #notin
-            #'param': ['exact', 'in'],
-            'param__pname': ['exact', 'in'],
-            'param__id' : ['exact','ne', 'in'], #notin
-            'val': ['lt', 'gt', 'lte', 'gte'],
-            'valqc': ['exact', 'ne', 'in', 'lt', 'gt', 'lte', 'gte'] #notin
+        # available filters:'exact','ne', 'lt', 'gt', 'lte', 'gte', 'in', icontains
+        'id': ['exact', 'ne', 'in', 'lte'],  # notin
+        'dt': ['lt', 'gt', 'lte', 'gte', 'icontains'],
+        'lat': ['lt', 'gt', 'lte', 'gte'],
+        'lon': ['lt', 'gt', 'lte', 'gte'],
+        'posqc': ['exact', 'ne', 'in', 'lt', 'gt', 'lte', 'gte'],  # notin
+        'pres': ['lt', 'gt', 'lte', 'gte'],
+        'presqc': ['exact', 'ne', 'in', 'lt', 'gt', 'lte', 'gte'],  # notin
+        #'param': ['exact', 'in'],
+        'param__pname': ['exact', 'in'],
+        'param__id': ['exact', 'ne', 'in'],  # notin
+        'val': ['lt', 'gt', 'lte', 'gte'],
+        'valqc': ['exact', 'ne', 'in', 'lt', 'gt', 'lte', 'gte']  # notin
     }
     ordering_fields = ['id', 'pres']
 
     @swagger_auto_schema(method='post', auto_schema=None)
     @api_view(['POST'])
     def post(self, request, *args, **kwargs):
-        #Create or update fields in data."<platform>" tables and create parameter in metadata."parameters" if not exists
+        # Create or update fields in data."<platform>" tables and create parameter in metadata."parameters" if not exists
         platform = self.kwargs['platform']
         t = getModel()
         t._meta.db_table = 'data\".\"'+platform
@@ -368,32 +427,33 @@ class DataList(viewsets.ModelViewSet):
         try:
             with transaction.atomic():
                 for i in range(len(datalist)):
-                    par=Parameter.objects.get(pname=datalist[i]['param'])
+                    par = Parameter.objects.get(pname=datalist[i]['param'])
                     obj, created = t.objects.update_or_create(
-                                        dt = datalist[i]['dt'],
-                                        lat = datalist[i]['lat'],
-                                        lon = datalist[i]['lon'],
-                                        param = par,
-                                        pres = datalist[i]['pres'],
-                                        defaults={
-                                                'dt' : datalist[i]['dt'],
-                                                'lat' : datalist[i]['lat'],
-                                                'lon' : datalist[i]['lon'],
-                                                'posqc' : datalist[i]['posqc'],
-                                                'pres' : datalist[i]['pres'],
-                                                'presqc' : datalist[i]['presqc'],
-                                                'param' : par,
-                                                'val' : datalist[i]['val'],
-                                                'valqc' : datalist[i]['valqc'],
-                                                'dvalqc' : datalist[i]['dvalqc']},
-                                    )
+                        dt=datalist[i]['dt'],
+                        lat=datalist[i]['lat'],
+                        lon=datalist[i]['lon'],
+                        param=par,
+                        pres=datalist[i]['pres'],
+                        defaults={
+                            'dt': datalist[i]['dt'],
+                            'lat': datalist[i]['lat'],
+                            'lon': datalist[i]['lon'],
+                            'posqc': datalist[i]['posqc'],
+                            'pres': datalist[i]['pres'],
+                            'presqc': datalist[i]['presqc'],
+                            'param': par,
+                            'val': datalist[i]['val'],
+                            'valqc': datalist[i]['valqc'],
+                            'dvalqc': datalist[i]['dvalqc']},
+                    )
         except Exception:
             return Response({
                 'success': False
-                })
+            })
         return Response({
-                'success': True
-                })
+            'success': True
+        })
+
 
 class DeepObservAllDataList(generics.ListCreateAPIView):
     swagger_schema = None
@@ -415,13 +475,14 @@ class DeepObservAllDataList(generics.ListCreateAPIView):
         "GET": [["user"]],
         "POST": [["user", "staff", "admin"]],
     }
+
     def get_queryset(self):
         platform = self.kwargs['platform']
         t = DeepObservgetModel()
         t._meta.db_table = 'data\".\"'+platform
         queryset = t.objects.all()
         return queryset
-    
+
     '''def get_serializer_class(self):
         platform = self.kwargs['platform']
         t = DeepObservgetModel()
@@ -434,60 +495,61 @@ class DeepObservAllDataList(generics.ListCreateAPIView):
     filter_backends = (DjangoFilterBackend, OrderingFilter,)
     Field.register_lookup(NotEqual)
     filter_fields = {
-            #available filters:'exact','ne', 'lt', 'gt', 'lte', 'gte', 'in', icontains
-            'id': ['exact', 'ne', 'in'], #notin
-            'dt': ['lt', 'gt', 'lte', 'gte', 'icontains'],
-            'lat': ['lt', 'gt', 'lte', 'gte'],
-            'lon': ['lt', 'gt', 'lte', 'gte'],
-            'posqc': ['exact', 'ne', 'in','lt', 'gt', 'lte', 'gte'], #notin
-            'pres': ['lt', 'gt', 'lte', 'gte'],
-            'presqc': ['exact', 'ne', 'in', 'lt', 'gt', 'lte', 'gte'], #notin
-            'param': ['exact'],
-            'param__id' : ['exact','ne', 'in'], #notin
-            'val': ['lt', 'gt', 'lte', 'gte'],
-            'valqc': ['exact', 'ne', 'in', 'lt', 'gt', 'lte', 'gte'], #notin
-            'rval': ['lt', 'gt', 'lte', 'gte'],
-            'rvalqc': ['exact', 'ne', 'in', 'lt', 'gt', 'lte', 'gte'] #notin
-        }
+        # available filters:'exact','ne', 'lt', 'gt', 'lte', 'gte', 'in', icontains
+        'id': ['exact', 'ne', 'in'],  # notin
+        'dt': ['lt', 'gt', 'lte', 'gte', 'icontains'],
+        'lat': ['lt', 'gt', 'lte', 'gte'],
+        'lon': ['lt', 'gt', 'lte', 'gte'],
+        'posqc': ['exact', 'ne', 'in', 'lt', 'gt', 'lte', 'gte'],  # notin
+        'pres': ['lt', 'gt', 'lte', 'gte'],
+        'presqc': ['exact', 'ne', 'in', 'lt', 'gt', 'lte', 'gte'],  # notin
+        'param': ['exact'],
+        'param__id': ['exact', 'ne', 'in'],  # notin
+        'val': ['lt', 'gt', 'lte', 'gte'],
+        'valqc': ['exact', 'ne', 'in', 'lt', 'gt', 'lte', 'gte'],  # notin
+        'rval': ['lt', 'gt', 'lte', 'gte'],
+        'rvalqc': ['exact', 'ne', 'in', 'lt', 'gt', 'lte', 'gte']  # notin
+    }
     ordering_fields = ['id']
 
-    def post (self, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         platform = self.kwargs['platform']
         t = DeepObservgetModel()
-        t._meta.db_table='data\".\"'+platform
+        t._meta.db_table = 'data\".\"'+platform
         prejson = json.loads(request.body)
         try:
             datalist = prejson['data']
             with transaction.atomic():
                 for i in range(len(datalist)):
-                    par=Parameter.objects.get(pname=datalist[i]['param'])
+                    par = Parameter.objects.get(pname=datalist[i]['param'])
                     obj, created = t.objects.update_or_create(
-                                        dt = datalist[i]['dt'],
-                                        lat = datalist[i]['lat'],
-                                        lon = datalist[i]['lon'],
-                                        param = par,
-                                        pres = datalist[i]['pres'],
-                                        defaults={
-                                                'dt' : datalist[i]['dt'],
-                                                'lat' : datalist[i]['lat'],
-                                                'lon' : datalist[i]['lon'],
-                                                'posqc' : datalist[i]['posqc'],
-                                                'pres' : datalist[i]['pres'],
-                                                'presqc' : datalist[i]['presqc'],
-                                                'param' : par,
-                                                'val' : datalist[i]['val'],
-                                                'valqc' : datalist[i]['valqc'],
-                                                'dvalqc' : datalist[i]['dvalqc'],
-                                                'rval' : datalist[i]['rval'],
-                                                'rvalqc' : datalist[i]['rvalqc']},
-                                    )
+                        dt=datalist[i]['dt'],
+                        lat=datalist[i]['lat'],
+                        lon=datalist[i]['lon'],
+                        param=par,
+                        pres=datalist[i]['pres'],
+                        defaults={
+                            'dt': datalist[i]['dt'],
+                            'lat': datalist[i]['lat'],
+                            'lon': datalist[i]['lon'],
+                            'posqc': datalist[i]['posqc'],
+                            'pres': datalist[i]['pres'],
+                            'presqc': datalist[i]['presqc'],
+                            'param': par,
+                            'val': datalist[i]['val'],
+                            'valqc': datalist[i]['valqc'],
+                            'dvalqc': datalist[i]['dvalqc'],
+                            'rval': datalist[i]['rval'],
+                            'rvalqc': datalist[i]['rvalqc']},
+                    )
         except Exception:
             return Response({
                 'success': False
-                })
+            })
         return Response({
-                'success': True
-                })
+            'success': True
+        })
+
 
 class DeepObservDataList(generics.ListAPIView):
     """
@@ -506,35 +568,35 @@ class DeepObservDataList(generics.ListAPIView):
     def get_queryset(self):
         platform = self.kwargs['platform']
         t = DeepObservgetModel()
-        t._meta.db_table='data\".\"'+platform
-        queryset=t.objects.all()
+        t._meta.db_table = 'data\".\"'+platform
+        queryset = t.objects.all()
         return queryset
-    
+
     def get_serializer_class(self):
         platform = self.kwargs['platform']
         t = DeepObservgetModel()
-        t._meta.db_table='data\".\"'+platform
+        t._meta.db_table = 'data\".\"'+platform
         serializer_class = DeepObservDataSerializer
-        serializer_class.Meta.model=t
+        serializer_class.Meta.model = t
         return serializer_class
     #serializer_class = DataSerializer
 
     filter_backends = (DjangoFilterBackend, OrderingFilter,)
     Field.register_lookup(NotEqual)
     filter_fields = {
-            #available filters:'exact','ne', 'lt', 'gt', 'lte', 'gte', 'in', icontains
-            'id': ['exact', 'ne', 'in'], #notin
-            'dt': ['lt', 'gt', 'lte', 'gte', 'icontains'],
-            'lat': ['lt', 'gt', 'lte', 'gte'],
-            'lon': ['lt', 'gt', 'lte', 'gte'],
-            'posqc': ['exact', 'ne', 'in','lt', 'gt', 'lte', 'gte'], #notin
-            'pres': ['lt', 'gt', 'lte', 'gte'],
-            'presqc': ['exact', 'ne', 'in', 'lt', 'gt', 'lte', 'gte'], #notin
-            'param': ['exact'],
-            'param__id' : ['exact','ne', 'in'], #notin
-            'val': ['lt', 'gt', 'lte', 'gte'],
-            'valqc': ['exact', 'ne', 'in', 'lt', 'gt', 'lte', 'gte'] #notin
-        }
+        # available filters:'exact','ne', 'lt', 'gt', 'lte', 'gte', 'in', icontains
+        'id': ['exact', 'ne', 'in'],  # notin
+        'dt': ['lt', 'gt', 'lte', 'gte', 'icontains'],
+        'lat': ['lt', 'gt', 'lte', 'gte'],
+        'lon': ['lt', 'gt', 'lte', 'gte'],
+        'posqc': ['exact', 'ne', 'in', 'lt', 'gt', 'lte', 'gte'],  # notin
+        'pres': ['lt', 'gt', 'lte', 'gte'],
+        'presqc': ['exact', 'ne', 'in', 'lt', 'gt', 'lte', 'gte'],  # notin
+        'param': ['exact'],
+        'param__id': ['exact', 'ne', 'in'],  # notin
+        'val': ['lt', 'gt', 'lte', 'gte'],
+        'valqc': ['exact', 'ne', 'in', 'lt', 'gt', 'lte', 'gte']  # notin
+    }
     ordering_fields = ['id']
 
 
@@ -558,18 +620,21 @@ class FerryboxDataList(generics.ListAPIView):
     ordering_fields = ['id']
 
 ###############################################################################################
-#Views for db_download service
+# Views for db_download service
 
-#returns platforms
+# returns platforms
+
+
 @protected_resource(scopes=['user'])
 def poseidon_platforms_with_measurements_between(request):
-    start_date=request.GET.get('start_date', '')
-    end_date=request.GET.get('end_date', '')
+    start_date = request.GET.get('start_date', '')
+    end_date = request.GET.get('end_date', '')
     # Get a cursor on the connection
     cursor = connection.cursor()
 
     # Now, callproc to the name of the procedure/function and pass a list of parameters inside
-    cursor.callproc("data.poseidon_platforms_with_measurements_between", [start_date, end_date])
+    cursor.callproc("data.poseidon_platforms_with_measurements_between", [
+                    start_date, end_date])
 
     # Fetch new a list of all the results
     results = cursor.fetchall()
@@ -578,81 +643,88 @@ def poseidon_platforms_with_measurements_between(request):
 
     data = []
     for i in range(len(results)):
-        d ={}
+        d = {}
         d['platform'] = results[i][0]
         data.append(d)
 
-    return JsonResponse({ "data" : data})
+    return JsonResponse({"data": data})
 
-#returns platform's parameters
+# returns platform's parameters
+
+
 @protected_resource(scopes=['user'])
 def poseidon_platform_parameters_with_measurements_between(request):
-    platform_name=request.GET.get('platform', '')
-    start_date=request.GET.get('start_date', '')
-    end_date=request.GET.get('end_date', '')
+    platform_name = request.GET.get('platform', '')
+    start_date = request.GET.get('start_date', '')
+    end_date = request.GET.get('end_date', '')
 
     # Get a cursor on the connection
     cursor = connection.cursor()
 
     # Now, callproc to the name of the procedure/function and pass a list of parameters inside
-    cursor.callproc("public.poseidon_platform_parameters_with_measurements_between", [platform_name, start_date, end_date])
+    cursor.callproc("public.poseidon_platform_parameters_with_measurements_between", [
+                    platform_name, start_date, end_date])
 
     # Fetch new a list of all the results
     results = cursor.fetchall()
     # Close the cursor
     cursor.close()
-    
-    return JsonResponse({ "data" : results[0][0]})
+
+    return JsonResponse({"data": results[0][0]})
+
 
 class Poseidon_db_List(generics.ListAPIView):
     swagger_schema = None
-    #Only staff users allowed
+    # Only staff users allowed
     #permission_classes = (UserPermission, )
 
     def get_queryset(self):
         platform = self.kwargs['platform']
         t = getModel_no_dvalqc()
-        t._meta.db_table='public\".\"'+platform
-        queryset=t.objects.all()
+        t._meta.db_table = 'public\".\"'+platform
+        queryset = t.objects.all()
         return queryset
-    
+
     def get_serializer_class(self):
         platform = self.kwargs['platform']
         t = getModel_no_dvalqc()
-        t._meta.db_table='public\".\"'+platform
+        t._meta.db_table = 'public\".\"'+platform
         serializer_class = NoDvalqcDataSerializer
-        serializer_class.Meta.model=t
+        serializer_class.Meta.model = t
         return serializer_class
 
     filter_backends = (DjangoFilterBackend,)
     Field.register_lookup(NotEqual)
     filter_fields = {
-            'dt': ['lt', 'gt', 'lte', 'gte', 'icontains'],
-            'pres': ['lt', 'gt', 'lte', 'gte', 'in'],
-            'param__id' : ['exact','ne', 'in'], 
-        }
+        'dt': ['lt', 'gt', 'lte', 'gte', 'icontains'],
+        'pres': ['lt', 'gt', 'lte', 'gte', 'in'],
+        'param__id': ['exact', 'ne', 'in'],
+    }
+
 
 def poseidon_db_unique_dt(request):
-    platform_name=request.GET.get('platform', '')
-    start_date=request.GET.get('start_date', '')
-    end_date=request.GET.get('end_date', '')
-    params=request.GET.get('params', '').split(',')
+    platform_name = request.GET.get('platform', '')
+    start_date = request.GET.get('start_date', '')
+    end_date = request.GET.get('end_date', '')
+    params = request.GET.get('params', '').split(',')
     print(params)
     t = getModel_no_dvalqc()
-    t._meta.db_table='public\".\"'+platform_name
-    queryset_dt=t.objects.values('dt').filter(Q(param__in=params), Q(dt__gte=start_date), Q(dt__lte=end_date)).distinct('dt')
-    queryset_pres=t.objects.values('pres').filter(Q(param__in=params), Q(dt__gte=start_date), Q(dt__lte=end_date)).order_by('pres').distinct('pres')
-    dt_list = [ obj for obj in queryset_dt ]
-    count_dt=len(dt_list)
-    pres_list = [ obj for obj in queryset_pres ]
-    count_pres=len(pres_list)
-    return JsonResponse({'count_dt': count_dt,'date' : dt_list, 'count_pres': count_pres,'pressure' : pres_list})
+    t._meta.db_table = 'public\".\"'+platform_name
+    queryset_dt = t.objects.values('dt').filter(Q(param__in=params), Q(
+        dt__gte=start_date), Q(dt__lte=end_date)).distinct('dt')
+    queryset_pres = t.objects.values('pres').filter(Q(param__in=params), Q(
+        dt__gte=start_date), Q(dt__lte=end_date)).order_by('pres').distinct('pres')
+    dt_list = [obj for obj in queryset_dt]
+    count_dt = len(dt_list)
+    pres_list = [obj for obj in queryset_pres]
+    count_pres = len(pres_list)
+    return JsonResponse({'count_dt': count_dt, 'date': dt_list, 'count_pres': count_pres, 'pressure': pres_list})
 
 # End of Views for db_download service
 ################################################################################################################
 
 
-#Start of Views for online_data service
+# Start of Views for online_data service
 ################################################################################################################
 
 class OnlineDataList(generics.ListAPIView):
@@ -665,84 +737,84 @@ class OnlineDataList(generics.ListAPIView):
 
 def ts_latest_data(request, platform):
     t = getModel()
-    t._meta.db_table='data\".\"'+platform
-    last=t.objects.latest('dt')
-    last_dt=last.dt
-    latest_data=t.objects.filter(dt=last_dt)
+    t._meta.db_table = 'data\".\"'+platform
+    last = t.objects.latest('dt')
+    last_dt = last.dt
+    latest_data = t.objects.filter(dt=last_dt)
 
-    if (last_dt.month <10):
-        start_date=str(last_dt.year)+"-0"+str(last_dt.month)
+    if (last_dt.month < 10):
+        start_date = str(last_dt.year)+"-0"+str(last_dt.month)
     else:
-        start_date=str(last_dt.year)+"-"+str(last_dt.month)
-    end_date=start_date
-    
+        start_date = str(last_dt.year)+"-"+str(last_dt.month)
+    end_date = start_date
+
     # Get a cursor on the connection
     cursor = connection.cursor()
 
     # Now, callproc to the name of the procedure/function and pass a list of parameters inside
-    cursor.callproc("public.poseidon_platform_parameters_with_measurements_between", [platform, start_date, end_date])
+    cursor.callproc("public.poseidon_platform_parameters_with_measurements_between", [
+                    platform, start_date, end_date])
 
     # Fetch new a list of all the results
     results = cursor.fetchall()[0][0]
-    param_string=results[0]['param']
-    param_list= param_string.split("#")
-    result_dict={'info':{
+    param_string = results[0]['param']
+    param_list = param_string.split("#")
+    result_dict = {'info': {
         'platform': platform,
-        'date':last_dt,
-        'lat':last.lat,
-        'lon':last.lon },
-        'params':{}
+        'date': last_dt,
+        'lat': last.lat,
+        'lon': last.lon},
+        'params': {}
     }
-    for i in range(0,len(param_list)):
-        row=param_list[i]
-        parts=re.split('\[|\]|@|\^|<|>', row)
-        description=parts[0]+"["+parts[1]+"] "+parts[3] +" ("+parts[7]+")"
+    for i in range(0, len(param_list)):
+        row = param_list[i]
+        parts = re.split('\[|\]|@|\^|<|>', row)
+        description = parts[0]+"["+parts[1]+"] "+parts[3] + " ("+parts[7]+")"
         if parts[1] not in result_dict['params'].keys():
-            result_dict['params'][parts[1]]={}
-        result_dict['params'][parts[1]][parts[3]]={
+            result_dict['params'][parts[1]] = {}
+        result_dict['params'][parts[1]][parts[3]] = {
             "description": description,
             "val": 9999,
-            "valqc":9
+            "valqc": 9
         }
-    
-    for i in range(0,len(latest_data)):
-        parameter=latest_data[i].param.pname
-        pressure=str(int(latest_data[i].pres))+"m"
-        result_dict['params'][parameter][pressure]['val']=latest_data[i].val
-        result_dict['params'][parameter][pressure]['valqc']=latest_data[i].valqc
+
+    for i in range(0, len(latest_data)):
+        parameter = latest_data[i].param.pname
+        pressure = str(int(latest_data[i].pres))+"m"
+        result_dict['params'][parameter][pressure]['val'] = latest_data[i].val
+        result_dict['params'][parameter][pressure]['valqc'] = latest_data[i].valqc
 
     # Close the cursor
     cursor.close()
     return JsonResponse(result_dict)
 
+
 def pr_latest_data(request, platform):
     t = getModel()
-    t._meta.db_table='data\".\"'+platform
-    last=t.objects.latest('dt')
-    last_dt=last.dt
-    latest_data=t.objects.filter(dt=last_dt)
+    t._meta.db_table = 'data\".\"'+platform
+    last = t.objects.latest('dt')
+    last_dt = last.dt
+    latest_data = t.objects.filter(dt=last_dt)
 
-    result_dict={'info':{
+    result_dict = {'info': {
         'platform': platform,
-        'date':last_dt,
-        'lat':last.lat,
-        'lon':last.lon },
-        'params':{}
+        'date': last_dt,
+        'lat': last.lat,
+        'lon': last.lon},
+        'params': {}
     }
 
-
-    for i in range(0,len(latest_data)):
-        parameter=latest_data[i].param.pname
+    for i in range(0, len(latest_data)):
+        parameter = latest_data[i].param.pname
         if parameter not in result_dict['params'].keys():
-            result_dict['params'][parameter]=[]
+            result_dict['params'][parameter] = []
         result_dict['params'][parameter].append({
             'pres': latest_data[i].pres,
             'val': latest_data[i].val,
             'valqc': latest_data[i].valqc
         })
-        
-    
+
     return JsonResponse(result_dict)
 
-#End of Views for online_data service
+# End of Views for online_data service
 ################################################################################################################
