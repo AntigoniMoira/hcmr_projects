@@ -21,6 +21,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # SECURITY WARNING: keep the secret key used in production secret!
 #Place secret key here:
+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
@@ -64,8 +65,8 @@ REST_FRAMEWORK = {
 }
 
 OAUTH2_PROVIDER = {
-    #'ACCESS_TOKEN_EXPIRE_SECONDS': 30,
     'RESOURCE_SERVER_INTROSPECTION_URL': 'http://localhost:8000/o/introspect/',
+    'RESOURCE_SERVER_AUTH_TOKEN': '',
 }
 
 AUTHENTICATION_BACKENDS = (
@@ -113,7 +114,6 @@ WSGI_APPLICATION = 'hcmr_poseidon.wsgi.application'
 
 #Place DATABASES ={...} here:
 
-
 # Password validation
 # https://docs.djangoproject.com/en/1.11/ref/settings/#auth-password-validators
 
@@ -145,12 +145,6 @@ SWAGGER_SETTINGS = {
             'authorizationUrl': "http://localhost:8000/o/authorize",
             'tokenUrl': "http://localhost:8000/o/token/",
             'flow': 'application',
-            'scopes': {
-                'user' : 'User of HCMR'
-                #'staff': 'Employee of HCMR',
-                #'admin':'Admin User'
-
-            }
         }
     },
     'DEFAULT_FILTER_INSPECTORS': [],
@@ -159,6 +153,7 @@ SWAGGER_SETTINGS = {
         'clientSecret': 'yourAppClientSecret',
         'appName': 'Third party'
     },
+    'VALIDATOR_URL': None,
 }
 
 
