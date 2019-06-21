@@ -38,5 +38,13 @@ urlpatterns = [
         views.pr_latest_data, name='pr_latest_data'),
     url(r'^online_data_from_mv/',
         views.OnlineDataList.as_view(), name='online_data_list'),
-
+    #postgres functions urls
+    url(r'^poseidon_get_platforms_with_rval',
+        views.poseidon_get_platforms_with_rval, name='poseidon_get_platforms_with_rval'),
+    url(r'^poseidon_get_unique_params',
+        views.poseidon_get_unique_params, name='poseidon_get_unique_params'),
+    url(r'^poseidon_get_unique_pres_per_param',
+        views.poseidon_get_unique_pres_per_param, name='poseidon_get_unique_pres_per_param'),
+    url(r'^platform_depth_parameter_with_qc',
+        views.platform_depth_parameter_with_qc, name='platform_depth_parameter_with_qc'), 
 ]
