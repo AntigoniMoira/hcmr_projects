@@ -412,7 +412,7 @@ class DataList(viewsets.ModelViewSet):
         'val': ['lt', 'gt', 'lte', 'gte'],
         'valqc': ['exact', 'ne', 'in', 'lt', 'gt', 'lte', 'gte']  # notin
     }
-    ordering_fields = ['id', 'pres']
+    ordering_fields = ['id', 'pres', 'dt']
 
     @swagger_auto_schema(method='post', auto_schema=None)
     @api_view(['POST'])
@@ -483,14 +483,13 @@ class DeepObservAllDataList(generics.ListCreateAPIView):
         queryset = t.objects.all()
         return queryset
 
-    '''def get_serializer_class(self):
+    def get_serializer_class(self):
         platform = self.kwargs['platform']
         t = DeepObservgetModel()
         t._meta.db_table = 'data\".\"'+platform
         serializer_class = DeepObservAllDataSerializer
         serializer_class.Meta.model = t
-        return serializer_class'''
-    serializer_class = DataSerializer
+        return serializer_class
 
     filter_backends = (DjangoFilterBackend, OrderingFilter,)
     Field.register_lookup(NotEqual)
@@ -579,7 +578,6 @@ class DeepObservDataList(generics.ListAPIView):
         serializer_class = DeepObservDataSerializer
         serializer_class.Meta.model = t
         return serializer_class
-    #serializer_class = DataSerializer
 
     filter_backends = (DjangoFilterBackend, OrderingFilter,)
     Field.register_lookup(NotEqual)
@@ -817,4 +815,79 @@ def pr_latest_data(request, platform):
     return JsonResponse(result_dict)
 
 # End of Views for online_data service
+################################################################################################################
+
+# Start of Views for Postgres functions
+################################################################################################################
+@protected_resource(scopes=['user'])
+def poseidon_get_platforms_with_rval(request):
+
+    # Get a cursor on the connection
+    cursor = connection.cursor()
+
+    # Now, callproc to the name of the procedure/function and pass a list of parameters inside
+    cursor.callproc("public.poseidon_get_platforms_with_rval", [])
+
+    # Fetch new a list of all the results
+    results = cursor.fetchall()
+    # Close the cursor
+    cursor.close()
+
+    return JsonResponse({"data": results[0][0]})
+
+@protected_resource(scopes=['user'])
+def poseidon_get_unique_params(request):
+    platform_name = request.GET.get('platform', '')
+
+    # Get a cursor on the connection
+    cursor = connection.cursor()
+
+    # Now, callproc to the name of the procedure/function and pass a list of parameters inside
+    cursor.callproc("public.poseidon_get_unique_params", [platform_name])
+
+    # Fetch new a list of all the results
+    results = cursor.fetchall()
+    # Close the cursor
+    cursor.close()
+
+    return JsonResponse({"data": results[0][0]})
+
+@protected_resource(scopes=['user'])
+def poseidon_get_unique_pres_per_param(request):
+    platform_name = request.GET.get('platform', '')
+    param_id = request.GET.get('paramID', '')
+    # Get a cursor on the connection
+    cursor = connection.cursor()
+
+    # Now, callproc to the name of the procedure/function and pass a list of parameters inside
+    cursor.callproc("public.poseidon_get_unique_pres_per_param", [platform_name, param_id])
+
+    # Fetch new a list of all the results
+    results = cursor.fetchall()
+    # Close the cursor
+    cursor.close()
+
+    return JsonResponse({"data": results[0][0]})
+
+@protected_resource(scopes=['user'])
+def platform_depth_parameter_with_qc(request):
+    table = request.GET.get('table', '')
+    param_id = request.GET.get('paramID', '')
+    pres = request.GET.get('pres', '')
+    qc = request.GET.get('qc', '')
+    # Get a cursor on the connection
+    cursor = connection.cursor()
+
+    # Now, callproc to the name of the procedure/function and pass a list of parameters inside
+    cursor.callproc("public.platform_depth_parameter_with_qc", [table, param_id, pres, qc])
+
+    # Fetch new a list of all the results
+    results = cursor.fetchall()
+    # Close the cursor
+    cursor.close()
+
+    return JsonResponse({"data": results[0][0]})
+
+
+# End of Views for Postgres functions
 ################################################################################################################
